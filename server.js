@@ -573,7 +573,7 @@ function updateRoomState(roomId) {
         id: p.id, name: sanitizeHtml(p.name), stack: p.stack, currentBet: p.currentBet,
         isActive: p.cards && p.cards.length > 0,
         seat: p.seat,
-        isDealer: room.players.indexOf(p) === room.dealerIndex,
+        isDealer: room._handPlayers ? room._handPlayers.indexOf(p) === room.dealerIndex : room.players.indexOf(p) === room.dealerIndex,
         connected: p.connected,
         isAdmin: p.isAdmin || false,
         isBot: p.isBot || false,
@@ -796,8 +796,14 @@ function startNewHand(room) {
   const positions = assignPositions(room._handPlayers, room.dealerIndex);
   room._handPlayers.forEach((p, i) => p.position = positions[i]);
 
-  const sbPos = (room.dealerIndex + 1) % n;
-  const bbPos = (room.dealerIndex + 2) % n;
+  let sbPos, bbPos;
+  if (n === 2) {
+    sbPos = room.dealerIndex;
+    bbPos = (room.dealerIndex + 1) % n;
+  } else {
+    sbPos = (room.dealerIndex + 1) % n;
+    bbPos = (room.dealerIndex + 2) % n;
+  }
 
   const sbPlayer = room._handPlayers[sbPos];
   const bbPlayer = room._handPlayers[bbPos];
@@ -897,7 +903,10 @@ function evaluateFiveCards(cards) {
 
   if (isFlush && isStraight) {
     if (ranks[0] === 8 && ranks[4] === 12) { rank = HAND_RANKS.ROYAL_FLUSH; name = 'Роял-флеш'; score = 9 * 10**10; }
-    else { rank = HAND_RANKS.STRAIGHT_FLUSH; name = 'Стрит-флеш'; score = 8 * 10**10 + (ranks[4] || 0); }
+    else {
+      const straightHigh = (ranks[0] === 0 && ranks[4] === 12) ? ranks[3] : ranks[4];
+      rank = HAND_RANKS.STRAIGHT_FLUSH; name = 'Стрит-флеш'; score = 8 * 10**10 + straightHigh;
+    }
   } else if (four) {
     rank = HAND_RANKS.FOUR_OF_A_KIND; name = 'Каре';
     score = 7 * 10**10 + sortedByCountThenRank[0] * 10**5 + sortedByCountThenRank[1];
@@ -908,7 +917,8 @@ function evaluateFiveCards(cards) {
     rank = HAND_RANKS.FLUSH; name = 'Флеш';
     score = 5 * 10**10 + ranks[4]*10**8 + ranks[3]*10**6 + ranks[2]*10**4 + ranks[1]*10**2 + ranks[0];
   } else if (isStraight) {
-    rank = HAND_RANKS.STRAIGHT; name = 'Стрит'; score = 4 * 10**10 + (ranks[4] || 0);
+    const straightHigh = (ranks[0] === 0 && ranks[4] === 12) ? ranks[3] : ranks[4];
+    rank = HAND_RANKS.STRAIGHT; name = 'Стрит'; score = 4 * 10**10 + straightHigh;
   } else if (three) {
     rank = HAND_RANKS.THREE_OF_A_KIND; name = 'Сет';
     score = 3 * 10**10 + sortedByCountThenRank[0]*10**8 + sortedByCountThenRank[1]*10**4 + sortedByCountThenRank[2];
