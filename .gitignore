@@ -1,0 +1,4 @@
+node_modules/
+rooms.json
+stats_data.json
+*.tmp
