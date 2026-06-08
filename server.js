@@ -72,13 +72,14 @@ function syncPlayerToGlobal(player) {
   if (!player || player.isBot || !player.name) return;
   const key = player.name.toLowerCase();
   const s = player.stats || {};
-  const existing = globalStats[key] || { handsPlayed: 0, wins: 0, maxWin: 0, maxBet: 0, actions: 0 };
+  const existing = globalStats[key] || { handsPlayed: 0, wins: 0, maxWin: 0, maxBet: 0, actions: 0, stack: 1000 };
   globalStats[key] = {
     handsPlayed: Math.max(existing.handsPlayed, s.handsPlayed || 0),
     wins: Math.max(existing.wins, s.wins || 0),
     maxWin: Math.max(existing.maxWin, s.maxWin || 0),
     maxBet: Math.max(existing.maxBet, s.maxBet || 0),
-    actions: Math.max(existing.actions, s.actions || 0)
+    actions: Math.max(existing.actions, s.actions || 0),
+    stack: Math.max(existing.stack, player.stack || 0)
   };
 }
 
@@ -113,15 +114,21 @@ function validateRoomId(roomId) {
 function validateAction(action, amount, player, gameState) {
   if (!['fold', 'check', 'call', 'raise', 'allin'].includes(action)) return false;
   
+  const currentBet = gameState.currentBet;
+  const playerBet = player.currentBet || 0;
+
+  if (action === 'call' && playerBet >= currentBet) return false;
+  if (action === 'check' && playerBet < currentBet) return false;
+  
   if (action === 'raise') {
     if (typeof amount !== 'number' || amount <= 0) return false;
     
-    const minRaise = gameState.minRaise || gameState.currentBet * 2;
-    const toCall = gameState.currentBet - (player.currentBet || 0);
+    const minRaise = gameState.minRaise || currentBet * 2;
+    const toCall = currentBet - playerBet;
     const totalNeeded = Math.max(minRaise, toCall + (gameState.lastRaiseSize || 0));
     
-    if (amount < totalNeeded && amount < (player.stack || 0) + (player.currentBet || 0)) return false;
-    if (amount > (player.stack || 0) + (player.currentBet || 0)) return false;
+    if (amount < totalNeeded && amount < (player.stack || 0) + playerBet) return false;
+    if (amount > (player.stack || 0) + playerBet) return false;
   }
   
   return true;
@@ -244,14 +251,15 @@ function startTurnTimer(room) {
   if (room.turnTimer) clearTimeout(room.turnTimer);
   const gs = room.gameState;
   if (!gs || gs.stage === 'showdown') return;
-  const currentPlayer = room.players[gs.currentPlayerIndex];
+  const handPlayers = room._handPlayers || room.players;
+  const currentPlayer = handPlayers[gs.currentPlayerIndex];
   if (!currentPlayer || currentPlayer.isBot) return;
 
   gs.turnDeadline = Date.now() + TURN_TIME;
   updateRoomState(room.id);
   room.turnTimer = setTimeout(() => {
     if (gs !== room.gameState) return;
-    const player = room.players[gs.currentPlayerIndex];
+    const player = handPlayers[gs.currentPlayerIndex];
     if (player && !player.hasActed && gs.stage !== 'showdown') {
       const action = player.currentBet === gs.currentBet ? 'check' : 'fold';
       processAction(room, player, action);
@@ -284,7 +292,8 @@ function startGameCountdown(room) {
 function botAction(room) {
   const gs = room.gameState;
   if (!gs || gs.stage === 'showdown' || gs.stage === 'waiting') return;
-  const currentPlayer = room.players[gs.currentPlayerIndex];
+  const handPlayers = room._handPlayers || room.players;
+  const currentPlayer = handPlayers[gs.currentPlayerIndex];
   if (!currentPlayer || !currentPlayer.isBot) return;
 
   const rand = Math.random();
@@ -328,6 +337,7 @@ function processAction(room, player, action, amount) {
   if (!player.stats) player.stats = { handsPlayed: 0, wins: 0, maxWin: 0, maxBet: 0, actions: 0 };
   player.stats.actions++;
   if (!player.handMaxBet) player.handMaxBet = 0;
+  if (player.totalBet === undefined) player.totalBet = 0;
 
   let actionSucceeded = false;
 
@@ -346,7 +356,7 @@ function processAction(room, player, action, amount) {
       if (callAmount > player.stack) callAmount = player.stack;
       if (callAmount > 0) {
         player.stack -= callAmount;
-        gs.pot += callAmount;
+        player.totalBet += callAmount;
         player.currentBet += callAmount;
       }
       actionSucceeded = true;
@@ -355,12 +365,12 @@ function processAction(room, player, action, amount) {
       const allIn = player.stack;
       if (allIn <= 0) break;
       player.stack -= allIn;
-      gs.pot += allIn;
+      player.totalBet += allIn;
       player.currentBet += allIn;
       if (player.currentBet > gs.currentBet) {
         gs.currentBet = player.currentBet;
-        gs.lastRaiseIndex = room.players.indexOf(player);
-        room.players.forEach(p => {
+        gs.lastRaiseIndex = (room._handPlayers || room.players).indexOf(player);
+        (room._handPlayers || room.players).forEach(p => {
           if (p !== player && p.cards && p.cards.length > 0) p.hasActed = false;
         });
       }
@@ -375,14 +385,14 @@ function processAction(room, player, action, amount) {
       if (actualRaise <= 0) break;
       const previousBet = gs.currentBet;
       player.stack -= actualRaise;
-      gs.pot += actualRaise;
+      player.totalBet += actualRaise;
       player.currentBet += actualRaise;
       if (player.currentBet > gs.currentBet) {
         gs.lastRaiseSize = player.currentBet - previousBet;
         gs.minRaise = player.currentBet + gs.lastRaiseSize;
         gs.currentBet = player.currentBet;
-        gs.lastRaiseIndex = room.players.indexOf(player);
-        room.players.forEach(p => {
+        gs.lastRaiseIndex = (room._handPlayers || room.players).indexOf(player);
+        (room._handPlayers || room.players).forEach(p => {
           if (p !== player && p.cards && p.cards.length > 0) p.hasActed = false;
         });
       }
@@ -392,14 +402,41 @@ function processAction(room, player, action, amount) {
 
   player.handMaxBet = Math.max(player.handMaxBet, player.currentBet);
   player.hasActed = true;
+  gs.pot = room.players.reduce((sum, p) => sum + (p.totalBet || 0), 0);
   moveToNextPlayer(room);
 }
 
 function moveToNextPlayer(room) {
   const gs = room.gameState;
-  const activePlayers = room.players.filter(p => p.cards && p.cards.length > 0);
-  if (activePlayers.length === 0) {
-    showdown(room);
+  const handPlayers = room._handPlayers || room.players;
+  const activePlayers = handPlayers.filter(p => p.cards && p.cards.length > 0);
+  
+  if (activePlayers.length <= 1) {
+    const winner = activePlayers[0];
+    if (winner) {
+      const totalPot = room.players.reduce((sum, p) => sum + (p.totalBet || 0), 0);
+      winner.stack += totalPot;
+      winner.stats.wins++;
+      winner.stats.maxWin = Math.max(winner.stats.maxWin, totalPot);
+      winner.handResult = { name: 'Все сбросили', rank: -1, score: 0 };
+      gs.pot = 0;
+      gs.stage = 'showdown';
+      gs.winners = [{ name: winner.name, hand: 'Все сбросили' }];
+      room.players.forEach(syncPlayerToGlobal);
+      saveGlobalStats();
+      updateRoomState(room.id);
+      setTimeout(() => {
+        if (rooms.has(room.id)) {
+          room.gameState = null;
+          room.players = room.players.filter(p => !p.isBot);
+          delete room._handPlayers;
+          updateRoomState(room.id);
+        }
+      }, 30000);
+    } else {
+      gs.stage = 'showdown';
+      updateRoomState(room.id);
+    }
     return;
   }
 
@@ -415,21 +452,21 @@ function moveToNextPlayer(room) {
     gs.currentBet = 0;
     gs.lastRaiseSize = 0;
     gs.minRaise = 0;
-    gs.currentPlayerIndex = (room.dealerIndex + 1) % room.players.length;
-    while (room.players[gs.currentPlayerIndex].cards.length === 0) {
-      gs.currentPlayerIndex = (gs.currentPlayerIndex + 1) % room.players.length;
+    gs.currentPlayerIndex = (room.dealerIndex + 1) % handPlayers.length;
+    while (handPlayers[gs.currentPlayerIndex].cards.length === 0) {
+      gs.currentPlayerIndex = (gs.currentPlayerIndex + 1) % handPlayers.length;
     }
   } else {
-    let nextIndex = (gs.currentPlayerIndex + 1) % room.players.length;
-    while (room.players[nextIndex].cards.length === 0) {
-      nextIndex = (nextIndex + 1) % room.players.length;
+    let nextIndex = (gs.currentPlayerIndex + 1) % handPlayers.length;
+    while (handPlayers[nextIndex].cards.length === 0) {
+      nextIndex = (nextIndex + 1) % handPlayers.length;
     }
     gs.currentPlayerIndex = nextIndex;
   }
 
   updateRoomState(room.id);
   startTurnTimer(room);
-  const nextPlayer = room.players[gs.currentPlayerIndex];
+  const nextPlayer = handPlayers[gs.currentPlayerIndex];
   if (nextPlayer && nextPlayer.isBot) {
     setTimeout(() => botAction(room), 1000 + Math.random() * 2000);
   }
@@ -437,6 +474,32 @@ function moveToNextPlayer(room) {
 
 function dealCommunityCards(room, count) {
   for (let i = 0; i < count; i++) room.gameState.communityCards.push(room.gameState.deck.pop());
+}
+
+function calculateSidePots(players) {
+  const active = players.filter(p => p.cards && p.cards.length > 0);
+  const betLevels = [...new Set(active.map(p => p.totalBet || 0).filter(b => b > 0))].sort((a, b) => a - b);
+  const pots = [];
+  let previousLevel = 0;
+
+  for (const level of betLevels) {
+    const contribution = level - previousLevel;
+    const contributors = players.filter(p => (p.totalBet || 0) >= level);
+    if (contributors.length === 0) continue;
+    const potSize = contribution * contributors.length;
+    const eligible = active.filter(p => (p.totalBet || 0) >= level);
+    pots.push({ size: potSize, eligible });
+    previousLevel = level;
+  }
+
+  const totalAssigned = pots.reduce((s, p) => s + p.size, 0);
+  const mainPotTotal = players.reduce((sum, p) => sum + (p.totalBet || 0), 0);
+  const remainder = mainPotTotal - totalAssigned;
+  if (remainder > 0) {
+    pots.push({ size: remainder, eligible: active });
+  }
+
+  return pots;
 }
 
 function showdown(room) {
@@ -447,31 +510,51 @@ function showdown(room) {
     p.stats.handsPlayed++;
     p.stats.maxBet = Math.max(p.stats.maxBet, p.handMaxBet || 0);
   });
-  let bestScore = -1, winners = [];
+  
   for (const player of activePlayers) {
     const allCards = [...player.cards, ...gs.communityCards];
-    const result = evaluateHand(allCards);
-    player.handResult = result;
-    if (result.score > bestScore) { bestScore = result.score; winners = [player]; }
-    else if (result.score === bestScore) winners.push(player);
+    player.handResult = evaluateHand(allCards);
   }
-  const winAmount = Math.floor(gs.pot / winners.length);
-  winners.forEach(w => {
-    w.stack += winAmount;
-    w.stats.wins++;
-    w.stats.maxWin = Math.max(w.stats.maxWin, winAmount);
-  });
+
+  const sidePots = calculateSidePots(room.players);
+  const allWinners = [];
+  const countedWinners = new Set();
+
+  for (const pot of sidePots) {
+    if (pot.size === 0) continue;
+    let bestScore = -1, bestPlayers = [];
+    for (const player of pot.eligible) {
+      if (player.handResult.score > bestScore) {
+        bestScore = player.handResult.score;
+        bestPlayers = [player];
+      } else if (player.handResult.score === bestScore) {
+        bestPlayers.push(player);
+      }
+    }
+    const share = Math.floor(pot.size / bestPlayers.length);
+    bestPlayers.forEach(w => {
+      w.stack += share;
+      if (!countedWinners.has(w)) {
+        w.stats.wins++;
+        countedWinners.add(w);
+      }
+      w.stats.maxWin = Math.max(w.stats.maxWin, share);
+      allWinners.push({ name: w.name, hand: w.handResult.name });
+    });
+  }
+
   room.players.forEach(syncPlayerToGlobal);
   saveGlobalStats();
   gs.pot = 0;
   gs.stage = 'showdown';
-  gs.winners = winners.map(w => ({ name: w.name, hand: w.handResult.name }));
+  gs.winners = allWinners;
   updateRoomState(room.id);
 
   setTimeout(() => {
     if (rooms.has(room.id)) {
       room.gameState = null;
       room.players = room.players.filter(p => !p.isBot);
+      delete room._handPlayers;
       updateRoomState(room.id);
     }
   }, 30000);
@@ -505,7 +588,7 @@ function updateRoomState(roomId) {
         currentBet: room.gameState.currentBet,
         stage: room.gameState.stage,
         minRaise: room.gameState.minRaise || room.gameState.currentBet * 2 || 0,
-        currentPlayerId: room.gameState.currentPlayerIndex !== -1 ? room.players[room.gameState.currentPlayerIndex]?.id : null,
+        currentPlayerId: room.gameState.currentPlayerIndex !== -1 ? (room._handPlayers || room.players)[room.gameState.currentPlayerIndex]?.id : null,
         turnDeadline: room.gameState.turnDeadline || null,
         winners: room.gameState.winners || null
       } : null,
@@ -529,13 +612,16 @@ io.on('connection', (socket) => {
       return callback({ success: false, message: 'Достигнут лимит комнат' });
     }
     const roomId = generateRoomId();
-    const room = {
-      id: roomId,
-      players: [{
-        id: socket.id, name: playerName.trim(), stack: 1000, cards: [], currentBet: 0,
-        hasActed: false, connected: true, isAdmin: true, seat: 0,
-        stats: { ...(globalStats[playerName.trim().toLowerCase()] || { handsPlayed: 0, wins: 0, maxWin: 0, maxBet: 0, actions: 0 }) }
-      }],
+      const nameKey = playerName.trim().toLowerCase();
+      const savedStats = globalStats[nameKey] || { handsPlayed: 0, wins: 0, maxWin: 0, maxBet: 0, actions: 0, stack: 1000 };
+      const restoredStack = savedStats.stack || 1000;
+      const room = {
+        id: roomId,
+        players: [{
+          id: socket.id, name: playerName.trim(), stack: restoredStack, cards: [], currentBet: 0,
+          hasActed: false, connected: true, isAdmin: true, seat: 0,
+          stats: { ...savedStats }
+        }],
       gameState: null, turnTimer: null, startTimer: null, creator: socket.id,
       lastActivity: Date.now()
     };
@@ -563,18 +649,25 @@ io.on('connection', (socket) => {
       return callback({ success: false, message: 'Комната полна' });
     }
 
-    const existing = room.players.find(p => p.id === socket.id);
+    let existing = room.players.find(p => p.id === socket.id);
+    if (!existing) {
+      const nameKey = playerName.trim().toLowerCase();
+      existing = room.players.find(p => p.name && p.name.toLowerCase() === nameKey && !p.connected);
+    }
     if (existing) {
+      existing.id = socket.id;
       existing.connected = true; existing.name = playerName.trim(); socket.join(roomId);
       socketToRoom.set(socket.id, roomId);
     } else {
       const hasActiveAdmin = room.players.some(p => p.isAdmin && p.connected);
       const nameKey = playerName.trim().toLowerCase();
       const newSeat = findAvailableSeat(room);
+      const savedStats = globalStats[nameKey] || { handsPlayed: 0, wins: 0, maxWin: 0, maxBet: 0, actions: 0, stack: 1000 };
+      const restoredStack = savedStats.stack || 1000;
       const newPlayer = {
-        id: socket.id, name: playerName.trim(), stack: 1000, cards: [], currentBet: 0,
+        id: socket.id, name: playerName.trim(), stack: restoredStack, cards: [], currentBet: 0,
         hasActed: false, connected: true, isAdmin: !hasActiveAdmin, seat: newSeat,
-        stats: { ...(globalStats[nameKey] || { handsPlayed: 0, wins: 0, maxWin: 0, maxBet: 0, actions: 0 }) }
+        stats: { ...savedStats }
       };
       room.players.push(newPlayer);
       socket.join(roomId);
@@ -607,8 +700,9 @@ io.on('connection', (socket) => {
     const room = findRoomBySocket(socket);
     if (!room || !room.gameState) return;
     const { action, amount } = actionData;
+    const handPlayers = room._handPlayers || room.players;
     const player = room.players.find(p => p.id === socket.id);
-    if (!player || room.gameState.currentPlayerIndex === -1 || room.players[room.gameState.currentPlayerIndex].id !== socket.id) return;
+    if (!player || room.gameState.currentPlayerIndex === -1 || handPlayers[room.gameState.currentPlayerIndex].id !== socket.id) return;
     if (player.hasActed && action !== 'fold') return;
     if (!validateAction(action, amount, player, room.gameState)) return;
     processAction(room, player, action, amount);
@@ -660,7 +754,11 @@ io.on('connection', (socket) => {
     const room = findRoomBySocket(socket);
     if (room) {
       const player = room.players.find(p => p.id === socket.id);
-      if (player) player.connected = false;
+      if (player) {
+        player.connected = false;
+        syncPlayerToGlobal(player);
+        saveGlobalStats();
+      }
       socketToRoom.delete(socket.id);
       updateRoomState(room.id);
     }
@@ -677,35 +775,38 @@ function findRoomBySocket(socket) {
 }
 
 function startNewHand(room) {
-  room.players.forEach(p => { p.cards = []; p.currentBet = 0; p.hasActed = false; p.handMaxBet = 0; });
-  room.players = room.players.filter(p => p.connected && p.stack > 0);
-  if (room.players.length < 2) {
+  room.players.forEach(p => { p.cards = []; p.currentBet = 0; p.hasActed = false; p.handMaxBet = 0; p.totalBet = 0; });
+  const activePlayers = room.players.filter(p => p.connected && p.stack > 0);
+  if (activePlayers.length < 2) {
     room.gameState = null;
     updateRoomState(room.id);
     return;
   }
+  room._handPlayers = activePlayers;
   const deck = createDeck();
-  room.players.forEach(p => p.cards = [deck.pop(), deck.pop()]);
+  room._handPlayers.forEach(p => p.cards = [deck.pop(), deck.pop()]);
 
   if (room.dealerIndex === undefined) room.dealerIndex = 0;
-  else room.dealerIndex = (room.dealerIndex + 1) % room.players.length;
+  else room.dealerIndex = (room.dealerIndex + 1) % room._handPlayers.length;
 
-  const n = room.players.length;
-  const positions = assignPositions(room.players, room.dealerIndex);
-  room.players.forEach((p, i) => p.position = positions[i]);
+  const n = room._handPlayers.length;
+  const positions = assignPositions(room._handPlayers, room.dealerIndex);
+  room._handPlayers.forEach((p, i) => p.position = positions[i]);
 
   const sbPos = (room.dealerIndex + 1) % n;
   const bbPos = (room.dealerIndex + 2) % n;
 
-  const sbPlayer = room.players[sbPos];
-  const bbPlayer = room.players[bbPos];
+  const sbPlayer = room._handPlayers[sbPos];
+  const bbPlayer = room._handPlayers[bbPos];
 
   const sbBlind = Math.min(sbPlayer.stack, SB_AMOUNT);
   const bbBlind = Math.min(bbPlayer.stack, BB_AMOUNT);
   sbPlayer.stack -= sbBlind;
   sbPlayer.currentBet = sbBlind;
+  sbPlayer.totalBet = (sbPlayer.totalBet || 0) + sbBlind;
   bbPlayer.stack -= bbBlind;
   bbPlayer.currentBet = bbBlind;
+  bbPlayer.totalBet = (bbPlayer.totalBet || 0) + bbBlind;
   const pot = sbBlind + bbBlind;
 
   room.gameState = {
@@ -724,7 +825,7 @@ function startNewHand(room) {
 
   updateRoomState(room.id);
   startTurnTimer(room);
-  const cp = room.players[room.gameState.currentPlayerIndex];
+  const cp = room._handPlayers[room.gameState.currentPlayerIndex];
   if (cp && cp.isBot) setTimeout(() => botAction(room), 1200);
 }
 
