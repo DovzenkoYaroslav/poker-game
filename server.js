@@ -190,7 +190,7 @@ function loadRooms() {
       
       const room = { ...roomData, gameState: null, turnTimer: null, startTimer: null };
       room.players = room.players.map(p => ({
-        ...p, cards: [], connected: false, currentBet: 0, hasActed: false,
+        ...p, cards: [], connected: false, currentBet: 0, hasActed: false, ready: false,
         stats: p.stats || { handsPlayed: 0, wins: 0, maxWin: 0, maxBet: 0, actions: 0 }
       }));
       rooms.set(roomId, room);
@@ -434,6 +434,7 @@ function moveToNextPlayer(room) {
         if (rooms.has(room.id)) {
           room.gameState = null;
           room.players = room.players.filter(p => !p.isBot);
+          room.players.forEach(p => { p.ready = false; });
           delete room._handPlayers;
           updateRoomState(room.id);
         }
@@ -559,6 +560,7 @@ function showdown(room) {
     if (rooms.has(room.id)) {
       room.gameState = null;
       room.players = room.players.filter(p => !p.isBot);
+      room.players.forEach(p => { p.ready = false; });
       delete room._handPlayers;
       updateRoomState(room.id);
     }
@@ -582,6 +584,7 @@ function updateRoomState(roomId) {
         connected: p.connected,
         isAdmin: p.isAdmin || false,
         isBot: p.isBot || false,
+        ready: p.ready || false,
         position: p.position || '',
         cards: (p.id === player.id || (room.gameState && room.gameState.stage === 'showdown')) ? p.cards : [],
         handResult: (room.gameState && room.gameState.stage === 'showdown') ? p.handResult : null,
@@ -624,7 +627,7 @@ io.on('connection', (socket) => {
         id: roomId,
         players: [{
           id: socket.id, name: playerName.trim(), stack: restoredStack, cards: [], currentBet: 0,
-          hasActed: false, connected: true, isAdmin: true, seat: 0,
+          hasActed: false, connected: true, isAdmin: true, seat: 0, ready: false,
           stats: { ...savedStats }
         }],
       gameState: null, turnTimer: null, startTimer: null, creator: socket.id,
@@ -671,7 +674,7 @@ io.on('connection', (socket) => {
       const restoredStack = savedStats.stack || 1000;
       const newPlayer = {
         id: socket.id, name: playerName.trim(), stack: restoredStack, cards: [], currentBet: 0,
-        hasActed: false, connected: true, isAdmin: !hasActiveAdmin, seat: newSeat,
+        hasActed: false, connected: true, isAdmin: !hasActiveAdmin, seat: newSeat, ready: false,
         stats: { ...savedStats }
       };
       room.players.push(newPlayer);
@@ -687,9 +690,13 @@ io.on('connection', (socket) => {
   socket.on('startGame', () => {
     const room = findRoomBySocket(socket);
     if (!room || room.creator !== socket.id) return;
-    room.players = room.players.filter(p => !p.isBot);
     const humanPlayers = room.players.filter(p => !p.isBot);
-    if (humanPlayers.length < 2) {
+    if (humanPlayers.length >= 2 && !humanPlayers.every(p => p.ready)) {
+      socket.emit('gameError', 'Не все игроки готовы');
+      return;
+    }
+    room.players = humanPlayers;
+    if (room.players.length < 2) {
       const bot = {
         id: 'bot_' + Date.now(), name: BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)],
         stack: 1000, cards: [], currentBet: 0, hasActed: false, connected: true, isAdmin: false, isBot: true,
@@ -699,6 +706,15 @@ io.on('connection', (socket) => {
     }
     // Запускаем 10-секундный обратный отсчёт
     startGameCountdown(room);
+  });
+
+  socket.on('setReady', () => {
+    const room = findRoomBySocket(socket);
+    if (!room || room.gameState) return;
+    const player = room.players.find(p => p.id === socket.id);
+    if (!player || player.isBot) return;
+    player.ready = !player.ready;
+    updateRoomState(room.id);
   });
 
   socket.on('action', (actionData) => {
@@ -739,6 +755,7 @@ io.on('connection', (socket) => {
     if (room.turnTimer) clearTimeout(room.turnTimer);
     if (room.startTimer) clearTimeout(room.startTimer);
     room.gameState = null;
+    room.players.forEach(p => { p.ready = false; });
     saveRoom(room.id);
     updateRoomState(room.id);
   });
@@ -946,5 +963,342 @@ function checkStraight(sortedRanks) {
   return false;
 }
 
+// ========== BLACKJACK ==========
+
+const BJ_MAX_PLAYERS = 7;
+const BJ_MIN_BET = 10;
+const BJ_TURN_TIME = 20000;
+
+function bjCardValue(card) {
+  const rank = card.rank;
+  if (rank === 'A') return 11;
+  if (['K', 'Q', 'J', '10'].includes(rank)) return 10;
+  return parseInt(rank);
+}
+
+function bjHandValue(cards) {
+  let value = 0, aces = 0;
+  for (const c of cards) {
+    if (c.rank === 'A') { aces++; value += 11; }
+    else value += bjCardValue(c);
+  }
+  while (value > 21 && aces > 0) { value -= 10; aces--; }
+  return { value, soft: aces > 0, bust: value > 21 };
+}
+
+function bjIsBlackjack(cards) {
+  return cards.length === 2 && bjHandValue(cards).value === 21;
+}
+
+function bjCreateShoe() {
+  const deck = [];
+  for (let d = 0; d < 6; d++)
+    for (const suit of SUITS)
+      for (const rank of RANKS)
+        deck.push({ suit, rank });
+  return shuffle(deck);
+}
+
+// BJ rooms
+const bjRooms = new Map();
+const bjSocketToRoom = new Map();
+
+function findBJRoomBySocket(socket) {
+  const roomId = bjSocketToRoom.get(socket.id);
+  if (roomId) return bjRooms.get(roomId);
+  for (const [, room] of bjRooms)
+    if (room.players.some(p => p.id === socket.id)) return room;
+  return null;
+}
+
+function bjNextPlayer(room) {
+  const active = room.players.filter(p => p.connected && !p.isDone);
+  if (active.length === 0) return bjDealerTurn(room);
+  const idx = room.players.findIndex(p => p.id === active[0].id);
+  room.currentPlayerIndex = idx;
+  room.turnDeadline = Date.now() + BJ_TURN_TIME;
+  bjBroadcast(room.id);
+  if (room.turnTimer) clearTimeout(room.turnTimer);
+  room.turnTimer = setTimeout(() => bjAutoPlay(room, room.players[idx]), BJ_TURN_TIME);
+}
+
+function bjAutoPlay(room, player) {
+  if (!player || player.isDone) { bjNextPlayer(room); return; }
+  const hv = bjHandValue(player.hands[0]);
+  if (hv.value <= 11) player.hands[0].push(room.deck.pop());
+  else { player.isDone = true; }
+  bjCheckBust(room, player);
+}
+
+function bjCheckBust(room, player) {
+  const hv = bjHandValue(player.hands[0]);
+  if (hv.bust) { player.isDone = true; player.result = 'bust'; }
+  if (player.isDone) bjNextPlayer(room);
+  else bjBroadcast(room.id);
+}
+
+function bjDealerTurn(room) {
+  room.state = 'dealer';
+  room.dealer.hidden = false;
+  let hv = bjHandValue(room.dealer.cards);
+  while (hv.value < 17) {
+    room.dealer.cards.push(room.deck.pop());
+    hv = bjHandValue(room.dealer.cards);
+  }
+  room.state = 'showdown';
+  bjPayouts(room);
+  bjBroadcast(room.id);
+  setTimeout(() => {
+    if (bjRooms.has(room.id)) {
+      room.players.forEach(p => { p.bet = 0; p.hands = [[]]; p.currentHand = 0; p.isDone = false; p.result = null; });
+      room.dealer = { cards: [], hidden: true };
+      room.state = 'betting';
+      room.deck = bjCreateShoe();
+      bjBroadcast(room.id);
+    }
+  }, 8000);
+}
+
+function bjPayouts(room) {
+  const dv = bjHandValue(room.dealer.cards);
+  const dBlackjack = bjIsBlackjack(room.dealer.cards);
+  for (const p of room.players) {
+    if (!p.connected || p.bet === 0) continue;
+    if (!p.stats) p.stats = { bjHandsPlayed: 0, bjWins: 0, bjBlackjacks: 0, bjMaxWin: 0 };
+    p.stats.bjHandsPlayed++;
+    const hv = bjHandValue(p.hands[0]);
+    const pBlackjack = bjIsBlackjack(p.hands[0]);
+    if (hv.bust) { p.result = 'lose'; }
+    else if (pBlackjack && dBlackjack) { p.stack += p.bet; p.result = 'push'; p.stats.bjBlackjacks++; p.stats.bjMaxWin = Math.max(p.stats.bjMaxWin, Math.floor(p.bet * 1.5)); }
+    else if (pBlackjack) { p.stack += Math.floor(p.bet * 2.5); p.result = 'blackjack'; p.stats.bjWins++; p.stats.bjBlackjacks++; p.stats.bjMaxWin = Math.max(p.stats.bjMaxWin, Math.floor(p.bet * 1.5)); }
+    else if (dBlackjack) { p.result = 'lose'; }
+    else if (hv.value > dv.value || dv.bust) { p.stack += p.bet * 2; p.result = 'win'; p.stats.bjWins++; p.stats.bjMaxWin = Math.max(p.stats.bjMaxWin, p.bet); }
+    else if (hv.value === dv.value) { p.stack += p.bet; p.result = 'push'; }
+    else { p.result = 'lose'; }
+  }
+  // Save stats after each round
+  room.players.forEach(p => { if (p.connected && p.name) syncBJPlayerToGlobal(p); });
+}
+
+function bjBroadcast(roomId) {
+  const room = bjRooms.get(roomId);
+  if (!room) return;
+  room.lastActivity = Date.now();
+  room.players.forEach(player => {
+    if (!player.connected) return;
+    const data = {
+      roomId: room.id,
+      players: room.players.map(p => ({
+        id: p.id, name: sanitizeHtml(p.name), stack: p.stack,
+        bet: p.bet,
+        hands: (room.state === 'showdown' || room.state === 'dealer' || p.id === player.id) ? p.hands : [],
+        currentHand: p.currentHand, isDone: p.isDone,
+        result: (room.state === 'showdown' || room.state === 'dealer') ? p.result : null,
+        isAdmin: p.isAdmin || false, connected: p.connected,
+        stats: p.stats || { bjHandsPlayed: 0, bjWins: 0, bjBlackjacks: 0, bjMaxWin: 0 }
+      })),
+      dealer: {
+        cards: (room.state === 'showdown' || room.state === 'dealer') ? room.dealer.cards : room.dealer.cards.map((c, i) => i === 1 ? { suit: '?', rank: '?' } : c),
+        hidden: room.state !== 'showdown' && room.state !== 'dealer'
+      },
+      state: room.state,
+      currentPlayerId: room.currentPlayerIndex !== -1 ? room.players[room.currentPlayerIndex]?.id : null,
+      turnDeadline: room.turnDeadline || null
+    };
+    io.to(player.id).emit('bjUpdate', data);
+  });
+}
+
+function syncBJPlayerToGlobal(player) {
+  if (!player || !player.name) return;
+  const key = player.name.toLowerCase();
+  const existing = globalStats[key] || { handsPlayed: 0, wins: 0, maxWin: 0, maxBet: 0, actions: 0, stack: 1000 };
+  const s = player.stats || {};
+  globalStats[key] = {
+    ...existing,
+    stack: existing.stack,
+    bjStack: player.stack,
+    bjHandsPlayed: Math.max(existing.bjHandsPlayed || 0, s.bjHandsPlayed || 0),
+    bjWins: Math.max(existing.bjWins || 0, s.bjWins || 0),
+    bjBlackjacks: Math.max(existing.bjBlackjacks || 0, s.bjBlackjacks || 0),
+    bjMaxWin: Math.max(existing.bjMaxWin || 0, s.bjMaxWin || 0)
+  };
+  saveGlobalStats();
+}
+
+// Cleanup stale BJ rooms
+setInterval(() => {
+  const now = Date.now();
+  for (const [id, room] of bjRooms) {
+    if (room.players.every(p => !p.connected) || now - (room.lastActivity || 0) > 24 * 60 * 60 * 1000) {
+      if (room.turnTimer) clearTimeout(room.turnTimer);
+      bjRooms.delete(id);
+    }
+  }
+}, 30 * 60 * 1000);
+
+// ---- Blackjack socket events ----
+io.on('connection', (socket) => {
+  socket.on('createBJRoom', (playerName, callback) => {
+    if (!validatePlayerName(playerName)) return callback({ success: false, message: 'Некорректное имя' });
+    if (bjRooms.size >= 100) return callback({ success: false, message: 'Лимит комнат' });
+    const roomId = generateRoomId();
+    const nameKey = playerName.trim().toLowerCase();
+    const saved = globalStats[nameKey] || {};
+    const savedStack = saved.bjStack || 1000;
+    const savedStats = { bjHandsPlayed: saved.bjHandsPlayed || 0, bjWins: saved.bjWins || 0, bjBlackjacks: saved.bjBlackjacks || 0, bjMaxWin: saved.bjMaxWin || 0 };
+    const room = {
+      id: roomId,
+      players: [{ id: socket.id, name: playerName.trim(), stack: savedStack, bet: 0, hands: [[]], currentHand: 0, isDone: false, result: null, isAdmin: true, connected: true, seat: 0, stats: { ...savedStats } }],
+      dealer: { cards: [], hidden: true },
+      deck: bjCreateShoe(),
+      state: 'waiting',
+      currentPlayerIndex: -1,
+      turnDeadline: null,
+      turnTimer: null,
+      lastActivity: Date.now()
+    };
+    bjRooms.set(roomId, room);
+    bjSocketToRoom.set(socket.id, roomId);
+    socket.join('bj_' + roomId);
+    callback({ success: true, roomId });
+    bjBroadcast(roomId);
+  });
+
+  socket.on('joinBJRoom', (data, callback) => {
+    const { roomId, playerName } = data;
+    if (!validatePlayerName(playerName)) return callback({ success: false, message: 'Некорректное имя' });
+    if (!validateRoomId(roomId)) return callback({ success: false, message: 'Неверный ID' });
+    const room = bjRooms.get(roomId);
+    if (!room) return callback({ success: false, message: 'Комната не найдена' });
+    if (room.state !== 'waiting' && room.state !== 'betting') return callback({ success: false, message: 'Игра уже идёт' });
+    if (room.players.length >= BJ_MAX_PLAYERS) return callback({ success: false, message: 'Комната полна' });
+    const existing = room.players.find(p => p.name && p.name.toLowerCase() === playerName.trim().toLowerCase() && !p.connected);
+    if (existing) {
+      existing.id = socket.id; existing.connected = true;
+      if (!existing.stats) existing.stats = { bjHandsPlayed: 0, bjWins: 0, bjBlackjacks: 0, bjMaxWin: 0 };
+      bjSocketToRoom.set(socket.id, roomId);
+      socket.join('bj_' + roomId);
+      callback({ success: true });
+      bjBroadcast(roomId);
+      return;
+    }
+    const nameKey = playerName.trim().toLowerCase();
+    const saved = globalStats[nameKey] || {};
+    const savedStack = saved.bjStack || 1000;
+    const savedStats = { bjHandsPlayed: saved.bjHandsPlayed || 0, bjWins: saved.bjWins || 0, bjBlackjacks: saved.bjBlackjacks || 0, bjMaxWin: saved.bjMaxWin || 0 };
+    const newPlayer = { id: socket.id, name: playerName.trim(), stack: savedStack, bet: 0, hands: [[]], currentHand: 0, isDone: false, result: null, isAdmin: !room.players.some(p => p.isAdmin && p.connected), connected: true, seat: room.players.length, stats: { ...savedStats } };
+    room.players.push(newPlayer);
+    bjSocketToRoom.set(socket.id, roomId);
+    socket.join('bj_' + roomId);
+    callback({ success: true });
+    bjBroadcast(roomId);
+  });
+
+  socket.on('startBJGame', () => {
+    const room = findBJRoomBySocket(socket);
+    if (!room || room.state !== 'waiting') return;
+    const admin = room.players.find(p => p.isAdmin && p.connected);
+    if (!admin || admin.id !== socket.id) return;
+    room.state = 'betting';
+    bjBroadcast(room.id);
+  });
+
+  socket.on('bjBet', (amount) => {
+    const room = findBJRoomBySocket(socket);
+    if (!room || room.state !== 'betting') return;
+    const player = room.players.find(p => p.id === socket.id);
+    if (!player || !player.connected) return;
+    const bet = Math.max(BJ_MIN_BET, Math.min(Math.floor(amount), player.stack));
+    if (bet <= 0) return;
+    player.stack -= bet;
+    player.bet = bet;
+    bjBroadcast(room.id);
+    if (room.players.every(p => !p.connected || p.bet > 0 || p.stack <= 0)) {
+      bjDeal(room);
+    }
+  });
+
+  socket.on('bjAction', (action) => {
+    const room = findBJRoomBySocket(socket);
+    if (!room || room.state !== 'playing') return;
+    const player = room.players.find(p => p.id === socket.id);
+    if (!player || player.isDone) return;
+    if (room.currentPlayerIndex === -1 || room.players[room.currentPlayerIndex]?.id !== socket.id) return;
+    if (room.turnTimer) clearTimeout(room.turnTimer);
+    if (action === 'stand') {
+      player.isDone = true;
+      bjNextPlayer(room);
+    } else if (action === 'hit') {
+      player.hands[0].push(room.deck.pop());
+      const hv = bjHandValue(player.hands[0]);
+      if (hv.bust || hv.value === 21) { player.isDone = true; player.result = hv.bust ? 'bust' : null; bjNextPlayer(room); }
+      else bjBroadcast(room.id);
+    } else if (action === 'double') {
+      if (player.hands[0].length !== 2 || player.stack < player.bet) return;
+      player.stack -= player.bet;
+      player.bet *= 2;
+      player.hands[0].push(room.deck.pop());
+      player.isDone = true;
+      const hv = bjHandValue(player.hands[0]);
+      if (hv.bust) player.result = 'bust';
+      bjNextPlayer(room);
+    }
+  });
+
+  socket.on('leaveBJRoom', () => {
+    const room = findBJRoomBySocket(socket);
+    if (!room) return;
+    const player = room.players.find(p => p.id === socket.id);
+    if (player) { player.connected = false; syncBJPlayerToGlobal(player); }
+    bjSocketToRoom.delete(socket.id);
+    socket.leave('bj_' + room.id);
+    if (room.players.every(p => !p.connected)) {
+      if (room.turnTimer) clearTimeout(room.turnTimer);
+      bjRooms.delete(room.id);
+    } else {
+      if (!room.players.some(p => p.isAdmin && p.connected)) {
+        const next = room.players.find(p => p.connected);
+        if (next) next.isAdmin = true;
+      }
+      bjBroadcast(room.id);
+    }
+  });
+
+  socket.on('disconnect', () => {
+    const room = findBJRoomBySocket(socket);
+    if (room) {
+      const player = room.players.find(p => p.id === socket.id);
+      if (player) { player.connected = false; syncBJPlayerToGlobal(player); }
+      bjSocketToRoom.delete(socket.id);
+      bjBroadcast(room.id);
+    }
+  });
+});
+
+function bjDeal(room) {
+  room.deck = bjCreateShoe();
+  room.dealer = { cards: [room.deck.pop(), room.deck.pop()], hidden: true };
+  room.players.forEach(p => {
+    if (!p.connected || p.bet <= 0) return;
+    p.hands = [[room.deck.pop(), room.deck.pop()]];
+    p.currentHand = 0;
+    p.isDone = false;
+    p.result = null;
+  });
+  room.state = 'playing';
+  const activePlayers = room.players.filter(p => p.connected && p.bet > 0);
+  room.currentPlayerIndex = activePlayers.length > 0 ? room.players.indexOf(activePlayers[0]) : -1;
+  room.turnDeadline = Date.now() + BJ_TURN_TIME;
+  bjBroadcast(room.id);
+  if (room.currentPlayerIndex >= 0) {
+    if (room.turnTimer) clearTimeout(room.turnTimer);
+    room.turnTimer = setTimeout(() => {
+      const p = room.players[room.currentPlayerIndex];
+      if (p && !p.isDone) bjAutoPlay(room, p);
+    }, BJ_TURN_TIME);
+  }
+}
+
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Покер-сервер запущен на http://localhost:${PORT}`));
+server.listen(PORT, () => console.log(`Сервер запущен на http://localhost:${PORT}`));

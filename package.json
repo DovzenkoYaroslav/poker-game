@@ -1,6 +1,6 @@
 {
   "name": "poker-for-friends",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Simple Texas Holdem for friends",
   "main": "server.js",
   "scripts": {

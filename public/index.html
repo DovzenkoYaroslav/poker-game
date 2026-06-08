@@ -34,27 +34,41 @@
       color: var(--text);
       display: flex;
       justify-content: center;
-      align-items: center;
+      align-items: flex-start;
       min-height: 100vh;
       margin: 0;
-      padding: 20px;
+      padding: 55px 10px 10px;
       background-attachment: fixed;
     }
+
+    #tabBar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+      display: flex; justify-content: center; gap: 6px;
+      padding: 8px; background: rgba(10,15,26,0.95);
+      backdrop-filter: blur(10px); border-bottom: 2px solid rgba(255,255,255,0.1);
+    }
+    .tab-btn {
+      padding: 6px 20px; border-radius: 30px; border: 2px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.05); color: var(--gray); font-size: 0.9rem;
+      font-weight: 600; cursor: pointer; transition: all 0.3s;
+    }
+    .tab-btn:hover { border-color: var(--gold); color: var(--gold-light); }
+    .tab-btn.active { background: linear-gradient(135deg, #27ae60, #2ecc71); color: #000; border-color: #2ecc71; }
 
     #main-container {
       display: flex;
       width: 100%;
-      max-width: 1400px;
-      gap: 15px;
+      max-width: 1300px;
+      gap: 10px;
     }
 
     .panel-left, .panel-right {
-      width: 280px;
+      width: 220px;
       background: var(--panel);
       backdrop-filter: blur(10px);
       border: 1px solid rgba(255,255,255,0.1);
-      padding: 20px;
-      border-radius: 16px;
+      padding: 15px;
+      border-radius: 12px;
       box-shadow: 0 8px 32px rgba(0,0,0,0.4);
       height: fit-content;
       position: sticky;
@@ -100,8 +114,8 @@
       background: var(--panel);
       backdrop-filter: blur(10px);
       border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 24px;
-      padding: 20px;
+      border-radius: 16px;
+      padding: 12px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -110,16 +124,16 @@
     }
 
     button {
-      padding: 12px 20px;
+      padding: 8px 16px;
       border-radius: 30px;
       border: none;
-      margin: 4px;
-      font-size: 0.9rem;
+      margin: 3px;
+      font-size: 0.8rem;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.25s ease;
-      letter-spacing: 0.5px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      letter-spacing: 0.3px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.25);
       text-transform: uppercase;
     }
 
@@ -147,15 +161,15 @@
     .btn-leave { background: linear-gradient(135deg, #5d6d7e, #95a5a6); color: black; }
 
     input[type="text"], input[type="number"] {
-      padding: 12px 15px;
+      padding: 8px 12px;
       border-radius: 30px;
       border: 2px solid rgba(255,255,255,0.15);
       background: rgba(0,0,0,0.3);
       color: white;
-      font-size: 0.95rem;
+      font-size: 0.85rem;
       outline: none;
       transition: 0.3s;
-      margin: 5px;
+      margin: 4px;
     }
     input:focus {
       border-color: var(--gold);
@@ -165,14 +179,14 @@
     .poker-table {
       background: radial-gradient(ellipse at center, var(--felt) 0%, var(--felt-dark) 100%);
       border-radius: 40% / 50%;
-      padding: 40px 50px;
+      padding: 25px 30px;
       text-align: center;
-      margin: 10px auto 20px auto;
-      border: 10px solid #3e2723;
+      margin: 10px auto 15px auto;
+      border: 8px solid #3e2723;
       box-shadow: inset 0 0 40px rgba(0,0,0,0.6), 0 15px 30px rgba(0,0,0,0.5);
       width: 100%;
-      max-width: 900px;
-      min-height: 600px;
+      max-width: 800px;
+      min-height: 400px;
       position: relative;
       display: flex;
       flex-direction: column;
@@ -188,22 +202,22 @@
     .community-cards {
       display: flex;
       justify-content: center;
-      gap: 12px;
-      margin: 15px 0;
-      min-height: 84px;
+      gap: 8px;
+      margin: 10px 0;
+      min-height: 72px;
     }
 
     .card {
-      width: 64px;
-      height: 90px;
+      width: 50px;
+      height: 72px;
       background: white;
-      border-radius: 8px;
+      border-radius: 6px;
       display: inline-flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       font-weight: 700;
-      font-size: 1.3rem;
+      font-size: 1.1rem;
       box-shadow: 0 6px 12px rgba(0,0,0,0.4);
       position: relative;
       transition: transform 0.2s;
@@ -227,28 +241,29 @@
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
-      gap: 15px;
-      margin: 15px 0;
+      gap: 8px;
+      margin: 10px 0;
     }
 
     .player-spot {
       background: rgba(0,0,0,0.6);
       backdrop-filter: blur(5px);
-      border-radius: 16px;
-      padding: 12px;
-      min-width: 130px;
+      border-radius: 12px;
+      padding: 8px;
+      min-width: 100px;
       text-align: center;
       border: 2px solid rgba(255,255,255,0.2);
       transition: 0.3s;
+      font-size: 0.8rem;
     }
     .player-spot.active-turn {
       border-color: var(--gold);
-      box-shadow: 0 0 20px var(--gold);
+      box-shadow: 0 0 15px var(--gold);
       background: rgba(240,185,11,0.1);
     }
 
     .pot {
-      font-size: 1.8rem;
+      font-size: 1.4rem;
       font-weight: 700;
       color: var(--gold-light);
       text-shadow: 0 2px 10px rgba(0,0,0,0.5);
@@ -257,21 +272,22 @@
     .winner-announce {
       background: linear-gradient(135deg, #f1c40f, #f39c12);
       color: #1e1e1e;
-      padding: 12px 20px;
+      padding: 8px 16px;
       border-radius: 30px;
-      margin: 10px 0;
+      margin: 8px 0;
       font-weight: 700;
+      font-size: 0.9rem;
       box-shadow: 0 4px 15px rgba(0,0,0,0.3);
     }
 
     .timer {
-      font-size: 1.5rem;
+      font-size: 1.2rem;
       font-weight: 700;
       background: #1e1e1e;
       color: var(--gold-light);
-      padding: 6px 18px;
+      padding: 4px 14px;
       border-radius: 30px;
-      margin: 0 auto 10px auto;
+      margin: 0 auto 8px auto;
       width: fit-content;
       box-shadow: 0 4px 10px rgba(0,0,0,0.4);
       border: 2px solid var(--gold);
@@ -279,12 +295,13 @@
 
     .stage-info {
       font-style: italic;
-      margin: 8px 0;
+      margin: 5px 0;
+      font-size: 0.85rem;
       color: var(--gold-light);
     }
 
     .bet-actions {
-      margin: 10px 0;
+      margin: 8px 0;
       text-align: center;
     }
     .bet-actions div {
@@ -292,6 +309,7 @@
       justify-content: center;
       flex-wrap: wrap;
       align-items: center;
+      gap: 3px;
     }
 
     .modal {
@@ -437,9 +455,9 @@
     /* Позиции игроков вокруг стола во время игры */
     .game-table-wrapper {
       position: relative;
-      padding: 55px 15px;
+      padding: 40px 10px;
       margin: 0 auto;
-      max-width: 960px;
+      max-width: 860px;
     }
     .players-grid {
       position: absolute;
@@ -507,6 +525,35 @@
       color: #000;
       box-shadow: 0 0 8px rgba(240,185,11,0.6);
     }
+    .mini-dot.ready {
+      background: #2ecc71;
+      border-color: #27ae60;
+    }
+    .seat-btn.ready-bg {
+      border-color: #2ecc71 !important;
+      background: rgba(46, 204, 113, 0.15) !important;
+    }
+    .btn-ready {
+      background: linear-gradient(135deg, #27ae60, #2ecc71) !important;
+      color: white !important;
+    }
+    .btn-not-ready {
+      background: linear-gradient(135deg, #5d6d7e, #95a5a6) !important;
+      color: white !important;
+    }
+    .bj-player-spot {
+      background: rgba(255,255,255,0.92) !important;
+      color: #000 !important;
+      border-color: #aaa !important;
+    }
+    .bj-player-spot.active-turn {
+      border-color: var(--gold) !important;
+      box-shadow: 0 0 15px var(--gold) !important;
+    }
+    .bj-player-spot .bj-label {
+      color: #555 !important;
+      font-size: 0.75rem;
+    }
 
     .raise-option {
       display: block;
@@ -539,15 +586,15 @@
     #lobby {
       background: var(--panel);
       backdrop-filter: blur(10px);
-      padding: 40px;
-      border-radius: 24px;
+      padding: 25px;
+      border-radius: 20px;
       text-align: center;
       box-shadow: 0 10px 40px rgba(0,0,0,0.5);
     }
     #lobby h2 {
       font-family: 'Playfair Display', serif;
-      font-size: 2.2rem;
-      margin-bottom: 25px;
+      font-size: 1.8rem;
+      margin-bottom: 15px;
       color: var(--gold-light);
     }
 
@@ -598,20 +645,26 @@
 
     @media (max-width: 1000px) {
       #main-container { flex-direction: column; }
-      .panel-left, .panel-right { width: 100%; position: static; margin-bottom: 15px; }
-      .poker-table { max-width: 90vw; aspect-ratio: auto; padding: 25px; }
-      .game-table-wrapper { padding: 40px 8px; }
-      .player-spot { min-width: 90px; font-size: 0.8rem; padding: 3px 6px; }
-      .modal-content { max-width: 95vw; padding: 20px; }
-      .countdown-circle { width: 150px; height: 150px; }
-      .countdown-number { font-size: 3.5rem; }
-      .rules table { font-size: 0.75rem; }
-      .rules th, .rules td { padding: 8px 6px; }
+      .panel-left, .panel-right { width: 100%; position: static; margin-bottom: 10px; }
+      .poker-table { max-width: 95vw; aspect-ratio: auto; padding: 15px; }
+      .game-table-wrapper { padding: 40px 4px; }
+      .player-spot { min-width: 80px; font-size: 0.75rem; padding: 3px 6px; }
+      .modal-content { max-width: 95vw; padding: 15px; }
+      .countdown-circle { width: 120px; height: 120px; }
+      .countdown-number { font-size: 2.5rem; }
+      .rules table { font-size: 0.7rem; }
+      .rules th, .rules td { padding: 6px 4px; }
     }
   </style>
 </head>
 <body>
-  <!-- Модалка: Правила (ШИРОКАЯ) -->
+  <div id="tabBar">
+    <button class="tab-btn active" onclick="switchTab('poker')">♠ Покер</button>
+    <button class="tab-btn" onclick="switchTab('bj')">♣ Блэкджек</button>
+  </div>
+
+  <div id="pokerSection" style="width:100%; display:flex; flex-direction:column; align-items:center;">
+    <!-- Модалка: Правила (ШИРОКАЯ) -->
   <div id="rulesModal" class="modal">
     <div class="modal-content">
       <span class="close-btn" onclick="closeRules()">&times;</span>
@@ -809,6 +862,9 @@
           </div>
         </div>
         <p id="botHint2" style="display:none; color:#aaa; font-style:italic;">Сейчас вы один – будет добавлен бот</p>
+        <div id="readySection" style="margin: 12px 0;">
+          <button id="readyBtn" onclick="toggleReady()" class="btn-not-ready" style="min-width:140px; font-size:1rem;">Готов</button>
+        </div>
         <button id="startGameBtn2" class="btn-start" style="display:none; margin-top:8px;" onclick="startGame()">Начать игру</button>
         <button class="btn-leave" onclick="leaveRoom()" style="margin-top:10px;">Покинуть комнату</button>
       </div>
@@ -848,6 +904,119 @@
     .card-inline.spade { color: #111; }
     .card-inline.club { color: #27ae60; }
   </style>
+
+  </div> <!-- /pokerSection -->
+
+  <div id="bjSection" style="display:none; width:100%; margin:50px auto 0;">
+    <div id="bjContainer" style="display:flex; gap:10px; width:100%; max-width:1300px; margin:0 auto;">
+
+      <!-- LEFT PANEL: Blackjack Rules -->
+      <div class="bj-panel" style="width:220px; background:var(--panel); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.1); padding:15px; border-radius:12px; height:fit-content; position:sticky; top:55px; color:var(--white); font-size:0.85rem; line-height:1.6;">
+        <h3 style="font-family:'Playfair Display',serif; font-size:1.2rem; border-bottom:2px solid var(--gold); padding-bottom:8px; margin-bottom:12px; color:var(--gold-light);">Правила</h3>
+        <div style="margin-bottom:10px;"><b style="color:var(--gold-light);">Цель:</b> набрать 21 очко или ближе к 21, чем дилер, но не больше.</div>
+        <div style="margin-bottom:8px;"><b style="color:var(--gold-light);">Карты:</b> 2–10 по номиналу, J/Q/K = 10, Туз = 1 или 11.</div>
+        <div style="margin-bottom:8px;"><b style="color:var(--gold-light);">Ходы:</b></div>
+        <div style="padding-left:10px; margin-bottom:8px;">
+          <div>• <span style="color:#f1c40f;">Ещё (Hit)</span> — взять карту</div>
+          <div>• <span style="color:#3498db;">Хватит (Stand)</span> — закончить ход</div>
+          <div>• <span style="color:#e67e22;">Удвоить (Double)</span> — удвоить ставку +1 карта (только на первых 2 картах)</div>
+        </div>
+        <div style="margin-bottom:8px;"><b style="color:var(--gold-light);">Дилер:</b> тянет до 17 очков и выше.</div>
+        <div style="margin-bottom:8px;"><b style="color:var(--gold-light);">Blackjack:</b> туз + 10/картинка = 3:2.</div>
+        <div style="margin-bottom:8px;"><b style="color:var(--gold-light);">Перебор:</b> >21 — проигрыш.</div>
+        <div style="color:var(--gray); font-size:0.75rem; margin-top:10px; border-top:1px solid rgba(255,255,255,0.1); padding-top:8px;">Баланс сохраняется между сессиями.</div>
+      </div>
+
+      <!-- CENTER: BJ Lobby / Game -->
+      <div style="flex:1; min-width:0;">
+
+        <!-- BJ Lobby -->
+        <div id="bjLobby" style="text-align:center; background:var(--panel); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.1); border-radius:16px; padding:30px; box-shadow:0 8px 30px rgba(0,0,0,0.5);">
+          <h2 style="font-family:'Playfair Display',serif; font-size:1.8rem; margin-bottom:15px; color:var(--gold-light);">♣ Блэкджек ♥</h2>
+          <input type="text" id="bjName" placeholder="Твой ник" maxlength="20" autocomplete="off" style="margin-bottom:12px;" />
+          <div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
+            <button onclick="bjSolo()" class="btn-start" style="min-width:150px;">🎲 Соло</button>
+            <button onclick="bjCreateRoom()" class="btn-call" style="min-width:150px;">🌐 Создать онлайн</button>
+          </div>
+          <div style="margin-top:12px;">
+            <input type="text" id="bjRoomIdInput" placeholder="ID комнаты" maxlength="6" style="text-transform:uppercase;" autocomplete="off" />
+            <button onclick="bjJoinRoom()" class="btn-check" style="min-width:100px;">Войти</button>
+          </div>
+          <p id="bjStatus" style="margin-top:12px; color:var(--gray); font-style:italic; font-size:0.9rem;">Введите ник и выберите режим</p>
+        </div>
+
+        <!-- BJ Online Lobby -->
+        <div id="bjOnlineLobby" style="display:none; background:var(--panel); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.1); border-radius:16px; padding:25px; box-shadow:0 8px 30px rgba(0,0,0,0.5); text-align:center;">
+          <h3 style="font-family:'Playfair Display',serif; font-size:1.4rem; color:var(--gold-light); margin-bottom:12px;">Ожидание игроков</h3>
+          <p style="color:var(--gray); font-size:0.9rem; margin-bottom:8px;">ID: <span id="bjRoomIdDisplay" style="color:var(--gold-light); font-weight:700; font-size:1.2rem; letter-spacing:2px;"></span></p>
+          <div id="bjPlayersList" style="display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin:12px 0;"></div>
+          <button id="bjStartBtn" onclick="bjStartGame()" class="btn-start" style="display:none;">Начать игру</button>
+          <button onclick="bjLeaveRoom()" class="btn-leave" style="margin-top:8px;">Покинуть</button>
+          <p id="bjOnlineStatus" style="margin-top:8px; color:var(--gray); font-size:0.85rem;"></p>
+        </div>
+
+        <!-- BJ Game Table -->
+        <div id="bjGame" style="display:none;">
+          <div class="bj-table" style="background:radial-gradient(ellipse at 50% 60%, #0d7a3e 0%, #0a5e2e 100%); border-radius:0 0 50% 50% / 0 0 40% 40%; padding:20px 25px; border:8px solid #3e2723; box-shadow:inset 0 0 40px rgba(0,0,0,0.6), 0 15px 30px rgba(0,0,0,0.5); text-align:center; min-height:350px;">
+
+            <!-- Dealer Area -->
+            <div id="bjDealerArea" style="margin-bottom:15px;">
+              <div style="display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:8px;">
+                <span style="color:var(--gold); font-weight:700; font-size:1.1rem;">🎩 Дилер</span>
+                <span id="bjDealerValue" style="background:rgba(0,0,0,0.5); padding:2px 12px; border-radius:12px; font-size:0.9rem; color:var(--white);"></span>
+              </div>
+              <div id="bjDealerCards" style="display:flex; justify-content:center; gap:6px; min-height:65px;"></div>
+            </div>
+
+            <!-- Divider -->
+            <div style="border-top:1px solid rgba(255,255,255,0.15); margin:10px 0;"></div>
+
+            <!-- Players Area -->
+            <div id="bjPlayersArea" style="display:flex; flex-wrap:wrap; justify-content:center; gap:10px; margin:12px 0;"></div>
+
+            <!-- Bet Area -->
+            <div id="bjBetArea" style="margin-top:12px;">
+              <p style="margin-bottom:8px; font-size:0.9rem;">Твой стек: <span id="bjStack" style="color:var(--gold-light); font-weight:700;">1000</span></p>
+              <div style="display:flex; justify-content:center; gap:6px; flex-wrap:wrap;">
+                <button onclick="bjPlaceBet(10)" class="btn-start" style="padding:6px 14px;">10</button>
+                <button onclick="bjPlaceBet(25)" class="btn-start" style="padding:6px 14px;">25</button>
+                <button onclick="bjPlaceBet(50)" class="btn-start" style="padding:6px 14px;">50</button>
+                <button onclick="bjPlaceBet(100)" class="btn-start" style="padding:6px 14px;">100</button>
+                <button onclick="bjPlaceBet(500)" class="btn-start" style="padding:6px 14px;">500</button>
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div id="bjActions" style="margin-top:12px; display:none;">
+              <button onclick="bjDoAction('hit')" class="btn-call" style="min-width:90px;">Ещё</button>
+              <button onclick="bjDoAction('stand')" class="btn-check" style="min-width:90px;">Хватит</button>
+              <button onclick="bjDoAction('double')" class="btn-raise" style="min-width:90px;" id="bjDoubleBtn">Удвоить</button>
+            </div>
+
+            <!-- Message -->
+            <p id="bjMessage" style="margin-top:12px; font-weight:700; font-size:1rem; min-height:1.5em;"></p>
+            <button id="bjNewGameBtn" onclick="bjNewGame()" class="btn-start" style="display:none;">Новая игра</button>
+            <button onclick="bjLeaveGame()" class="btn-leave" style="margin-top:8px;">Выйти</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT PANEL: BJ Stats -->
+      <div class="bj-panel" style="width:220px; background:var(--panel); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.1); padding:15px; border-radius:12px; height:fit-content; position:sticky; top:55px; color:var(--white);">
+        <h3 style="font-family:'Playfair Display',serif; font-size:1.2rem; border-bottom:2px solid var(--gold); padding-bottom:8px; margin-bottom:12px; color:var(--gold-light);">👤 Профиль</h3>
+        <div id="bjProfileStats">
+          <div class="stat-row"><span>Баланс:</span> <span id="bjStatStack">0</span></div>
+          <div class="stat-row"><span>Сыграно:</span> <span id="bjStatHands">0</span></div>
+          <div class="stat-row"><span>Побед:</span> <span id="bjStatWins">0</span></div>
+          <div class="stat-row"><span>Blackjack:</span> <span id="bjStatBJ">0</span></div>
+          <div class="stat-row"><span>Макс. выигрыш:</span> <span id="bjStatMaxWin">0</span></div>
+          <div class="stat-row"><span>Винрейт:</span> <span id="bjStatWinrate">0%</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
@@ -952,6 +1121,8 @@
       document.getElementById('startCountdownText').textContent = data.remaining;
     });
 
+    socket.on('gameError', (msg) => { showError(msg); });
+
     socket.on('updateGame', (data) => {
       document.getElementById('gameStartingOverlay').classList.remove('visible');
 
@@ -1041,15 +1212,35 @@
     function renderLobbyInGame(data) {
       const humanPlayers = data.players ? data.players.filter(p => !p.isBot) : [];
       const isAdmin = data.players && data.players.find(p => p.id === myId)?.isAdmin;
+      const allReady = humanPlayers.length >= 2 && humanPlayers.every(p => p.ready);
       const btn = document.getElementById('startGameBtn2');
       const botHint = document.getElementById('botHint2');
       if (isAdmin && humanPlayers.length >= 1 && !data.gameState) {
         btn.style.display = 'inline-block';
+        btn.disabled = humanPlayers.length >= 2 && !allReady;
         botHint.style.display = humanPlayers.length === 1 ? 'block' : 'none';
       } else {
         btn.style.display = 'none';
         botHint.style.display = 'none';
       }
+
+      // Ready button
+      const readySection = document.getElementById('readySection');
+      if (humanPlayers.length >= 2) {
+        readySection.style.display = 'block';
+        const me = data.players.find(p => p.id === myId);
+        const readyBtn = document.getElementById('readyBtn');
+        if (me && me.ready) {
+          readyBtn.textContent = 'Отменить готовность';
+          readyBtn.className = 'btn-ready';
+        } else {
+          readyBtn.textContent = 'Готов';
+          readyBtn.className = 'btn-not-ready';
+        }
+      } else {
+        readySection.style.display = 'none';
+      }
+
       // Рендер мест (сетка)
       const seatGrid = document.getElementById('seatGrid');
       let html = '';
@@ -1057,8 +1248,10 @@
         const player = data.players.find(p => p.seat === i);
         if (player) {
           const isMine = player.id === myId;
-          html += `<div class="seat-btn taken${isMine ? ' mine' : ''}" title="${sanitizeHtml(player.name)}">
-            <span class="seat-name">${sanitizeHtml(player.name)}</span>
+          const readyClass = !player.isBot && player.ready ? ' ready-bg' : '';
+          const label = player.isBot ? '🤖' : (player.ready ? '✅' : '⏳');
+          html += `<div class="seat-btn taken${isMine ? ' mine' : ''}${readyClass}" title="${sanitizeHtml(player.name)}">
+            <span class="seat-name">${sanitizeHtml(player.name)} ${label}</span>
             <span class="seat-num">мест ${i}</span>
           </div>`;
         } else {
@@ -1077,7 +1270,8 @@
         const pos = MINI_DOT_POS[i];
         if (player) {
           const isMine = player.id === myId;
-          mHtml += `<div class="mini-dot taken${isMine ? ' mine' : ''}" style="left:${pos.left}%;top:${pos.top}%;" title="${sanitizeHtml(player.name)}">${i}</div>`;
+          const readyClass = !player.isBot && player.ready ? ' ready' : '';
+          mHtml += `<div class="mini-dot taken${isMine ? ' mine' : ''}${readyClass}" style="left:${pos.left}%;top:${pos.top}%;" title="${sanitizeHtml(player.name)}">${i}</div>`;
         } else {
           mHtml += `<div class="mini-dot free" style="left:${pos.left}%;top:${pos.top}%;">${i}</div>`;
         }
@@ -1189,12 +1383,337 @@
     }
 
     function startGame() { socket.emit('startGame'); }
+    function toggleReady() { socket.emit('setReady'); }
     function sendAction(action) { socket.emit('action', { action }); }
     function leaveRoom() { socket.emit('leaveRoom'); showLobby(); }
     function leaveGame() {
       socket.emit('leaveGame');
       document.getElementById('game').style.display = 'none';
       document.getElementById('lobbyInGame').style.display = 'block';
+    }
+
+    // ========== ТАБЫ ==========
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelector(`.tab-btn[onclick*="${tab}"]`).classList.add('active');
+      document.getElementById('pokerSection').style.display = tab === 'poker' ? 'flex' : 'none';
+      document.getElementById('bjSection').style.display = tab === 'bj' ? 'block' : 'none';
+    }
+
+    // ========== БЛЭКДЖЕК ==========
+    let bjRoomId = null, bjSoloMode = false, bjState = null;
+
+    function bjValidName() {
+      const name = document.getElementById('bjName').value.trim();
+      if (!isValidName(name)) { showError('Имя: 1-20 символов (буквы, цифры, пробел, -, _)'); return null; }
+      return name;
+    }
+
+    function showBJ(section) {
+      document.getElementById('bjLobby').style.display = section === 'lobby' ? 'block' : 'none';
+      document.getElementById('bjOnlineLobby').style.display = section === 'online' ? 'block' : 'none';
+      document.getElementById('bjGame').style.display = section === 'game' ? 'block' : 'none';
+    }
+
+    function bjSolo() {
+      const name = bjValidName();
+      if (!name) return;
+      bjSoloMode = true;
+      bjRoomId = null;
+      bjSoloState = { deck: bjCreateDeck(), playerCards: [], dealerCards: [], stack: 1000, bet: 0 };
+      showBJ('game');
+      document.getElementById('bjBetArea').style.display = 'block';
+      document.getElementById('bjActions').style.display = 'none';
+      document.getElementById('bjNewGameBtn').style.display = 'none';
+      document.getElementById('bjMessage').textContent = 'Сделай ставку';
+      renderBJEmpty();
+    }
+
+    function bjCreateRoom() {
+      const name = bjValidName();
+      if (!name) return;
+      bjSoloMode = false;
+      socket.emit('createBJRoom', name, (res) => {
+        if (res.success) { bjRoomId = res.roomId; showBJ('online'); updateBJOnlineLobby(); }
+        else showError(res.message);
+      });
+    }
+
+    function bjJoinRoom() {
+      const name = bjValidName();
+      if (!name) return;
+      const roomId = document.getElementById('bjRoomIdInput').value.trim().toUpperCase();
+      if (!/^[A-Z0-9]{6}$/.test(roomId)) return showError('ID: 6 символов A-Z0-9');
+      bjSoloMode = false;
+      socket.emit('joinBJRoom', { roomId, playerName: name }, (res) => {
+        if (res.success) { bjRoomId = roomId; showBJ('online'); updateBJOnlineLobby(); }
+        else showError(res.message);
+      });
+    }
+
+    function bjStartGame() { socket.emit('startBJGame'); }
+
+    function bjLeaveRoom() {
+      socket.emit('leaveBJRoom');
+      bjRoomId = null;
+      showBJ('lobby');
+    }
+
+    function bjLeaveGame() {
+      if (bjSoloMode) { bjSoloMode = false; showBJ('lobby'); return; }
+      socket.emit('leaveBJRoom');
+      bjRoomId = null;
+      bjSoloMode = false;
+      showBJ('lobby');
+    }
+
+    function bjPlaceBet(amount) {
+      if (bjSoloMode) {
+        if (amount > bjSoloState.stack) { showError('Недостаточно фишек'); return; }
+        bjSoloState.bet = amount;
+        bjSoloState.stack -= amount;
+        bjSoloState.playerCards = [bjDraw(bjSoloState.deck), bjDraw(bjSoloState.deck)];
+        bjSoloState.dealerCards = [bjDraw(bjSoloState.deck), bjDraw(bjSoloState.deck)];
+        document.getElementById('bjBetArea').style.display = 'none';
+        document.getElementById('bjActions').style.display = 'block';
+        document.getElementById('bjDoubleBtn').style.display = bjSoloState.stack >= bjSoloState.bet ? 'inline-block' : 'none';
+        document.getElementById('bjMessage').textContent = 'Твой ход';
+        renderBJSolo();
+        const pv = bjHandValueCalc(bjSoloState.playerCards);
+        if (pv.value === 21) bjSoloStand();
+      } else {
+        socket.emit('bjBet', amount);
+        document.getElementById('bjBetArea').style.display = 'none';
+      }
+    }
+
+    function bjDoAction(action) {
+      if (bjSoloMode) {
+        if (action === 'hit') {
+          const hv = bjSoloHit();
+          renderBJSolo();
+          if (hv.bust) { bjEndSolo('Перебор! Ты проиграл'); return; }
+          if (hv.value === 21) { bjSoloStand(); return; }
+          document.getElementById('bjDoubleBtn').style.display = 'none';
+        } else if (action === 'stand') {
+          bjSoloStand();
+        } else if (action === 'double') {
+          if (bjSoloState.bet > bjSoloState.stack) { showError('Недостаточно фишек'); return; }
+          bjSoloState.stack -= bjSoloState.bet;
+          bjSoloState.bet *= 2;
+          bjSoloState.playerCards.push(bjDraw(bjSoloState.deck));
+          const hv = bjHandValueCalc(bjSoloState.playerCards);
+          renderBJSolo();
+          if (hv.bust) { bjEndSolo('Перебор! Ты проиграл'); return; }
+          bjSoloStand();
+        }
+        return;
+      }
+      socket.emit('bjAction', action);
+    }
+
+    function bjNewGame() {
+      if (bjSoloMode) {
+        bjSoloState.deck = bjCreateDeck();
+        bjSoloState.playerCards = [];
+        bjSoloState.dealerCards = [];
+        bjSoloState.bet = 0;
+        document.getElementById('bjBetArea').style.display = 'block';
+        document.getElementById('bjNewGameBtn').style.display = 'none';
+        document.getElementById('bjMessage').textContent = 'Сделай ставку';
+        document.getElementById('bjActions').style.display = 'none';
+        renderBJEmpty();
+      }
+    }
+
+    // Solo Blackjack engine
+    function bjCreateDeck() {
+      const d = [], suits = ['♠','♥','♦','♣'], ranks = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+      for (const s of suits)
+        for (const r of ranks)
+          d.push({suit:s, rank:r});
+      for (let i = d.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [d[i], d[j]] = [d[j], d[i]];
+      }
+      return d;
+    }
+
+    function bjDraw(deck) { return deck.pop(); }
+
+    function bjHandValueCalc(cards) {
+      let v = 0, a = 0;
+      for (const c of cards) {
+        if (c.rank === 'A') { a++; v += 11; }
+        else if (['K','Q','J','10'].includes(c.rank)) v += 10;
+        else v += parseInt(c.rank);
+      }
+      while (v > 21 && a > 0) { v -= 10; a--; }
+      return { value: v, soft: a > 0, bust: v > 21 };
+    }
+
+    let bjSoloState = { deck: [], playerCards: [], dealerCards: [], stack: 1000, bet: 0, stats: { bjHandsPlayed: 0, bjWins: 0, bjBlackjacks: 0, bjMaxWin: 0 } };
+
+    function bjSoloHit() {
+      bjSoloState.playerCards.push(bjDraw(bjSoloState.deck));
+      return bjHandValueCalc(bjSoloState.playerCards);
+    }
+
+    function bjSoloStand() {
+      bjSoloState.stats.bjHandsPlayed++;
+      let dv = bjHandValueCalc(bjSoloState.dealerCards);
+      while (dv.value < 17) {
+        bjSoloState.dealerCards.push(bjDraw(bjSoloState.deck));
+        dv = bjHandValueCalc(bjSoloState.dealerCards);
+      }
+      const pv = bjHandValueCalc(bjSoloState.playerCards);
+      const pBJ = bjSoloState.playerCards.length === 2 && pv.value === 21;
+      const dBJ = bjSoloState.dealerCards.length === 2 && dv.value === 21;
+      let msg;
+      if (pBJ && dBJ) { bjSoloState.stack += bjSoloState.bet; msg = 'Blackjack у обоих — ничья!'; bjSoloState.stats.bjBlackjacks++; }
+      else if (pBJ) { bjSoloState.stack += Math.floor(bjSoloState.bet * 2.5); msg = 'Blackjack! +' + Math.floor(bjSoloState.bet * 1.5); bjSoloState.stats.bjWins++; bjSoloState.stats.bjBlackjacks++; bjSoloState.stats.bjMaxWin = Math.max(bjSoloState.stats.bjMaxWin, Math.floor(bjSoloState.bet * 1.5)); }
+      else if (dBJ) { msg = 'У дилера Blackjack!'; }
+      else if (dv.bust || pv.value > dv.value) { bjSoloState.stack += bjSoloState.bet * 2; msg = 'Ты выиграл! +' + bjSoloState.bet; bjSoloState.stats.bjWins++; bjSoloState.stats.bjMaxWin = Math.max(bjSoloState.stats.bjMaxWin, bjSoloState.bet); }
+      else if (pv.value === dv.value) { bjSoloState.stack += bjSoloState.bet; msg = 'Ничья'; }
+      else { msg = 'Дилер победил'; }
+      renderBJSolo();
+      document.getElementById('bjMessage').textContent = msg;
+      document.getElementById('bjNewGameBtn').style.display = 'inline-block';
+      document.getElementById('bjActions').style.display = 'none';
+    }
+
+    function bjEndSolo(msg) {
+      bjSoloState.stats.bjHandsPlayed++;
+      renderBJSolo();
+      document.getElementById('bjMessage').textContent = msg;
+      document.getElementById('bjNewGameBtn').style.display = 'inline-block';
+      document.getElementById('bjActions').style.display = 'none';
+    }
+
+    function updateBJProfile(stats) {
+      if (!stats) return;
+      document.getElementById('bjStatStack').textContent = stats.stack ?? 0;
+      document.getElementById('bjStatHands').textContent = stats.bjHandsPlayed ?? 0;
+      document.getElementById('bjStatWins').textContent = stats.bjWins ?? 0;
+      document.getElementById('bjStatBJ').textContent = stats.bjBlackjacks ?? 0;
+      document.getElementById('bjStatMaxWin').textContent = stats.bjMaxWin ?? 0;
+      const rate = stats.bjHandsPlayed ? ((stats.bjWins / stats.bjHandsPlayed) * 100).toFixed(1) : 0;
+      document.getElementById('bjStatWinrate').textContent = rate + '%';
+    }
+
+    function renderBJCard(card) {
+      if (!card || card.rank === '?') return '<div class="card back">?</div>';
+      let cls = '';
+      if (card.suit === '♥' || card.suit === '♦') cls = ' heart';
+      else if (card.suit === '♠') cls = ' spade';
+      else cls = ' club';
+      return `<div class="card${cls}">${card.rank}${card.suit}</div>`;
+    }
+
+    function renderBJSolo() {
+      const pv = bjHandValueCalc(bjSoloState.playerCards);
+      const dv = bjHandValueCalc(bjSoloState.dealerCards);
+      document.getElementById('bjDealerCards').innerHTML = bjSoloState.dealerCards.map(renderBJCard).join('');
+      document.getElementById('bjDealerValue').textContent = '(' + dv.value + ')';
+      const phtml = `<div class="player-spot bj-player-spot active-turn" style="position:static; transform:none; min-width:140px;">
+        <div style="font-weight:700; font-size:0.95rem;">Ты</div>
+        <div><span class="bj-label">Стек:</span> ${bjSoloState.stack}</div>
+        <div><span class="bj-label">Ставка:</span> ${bjSoloState.bet}</div>
+        <div style="display:flex; justify-content:center; margin:4px 0;">${bjSoloState.playerCards.map(renderBJCard).join('')}</div>
+        <div><span class="bj-label">Очки:</span> <strong>${pv.value}</strong>${pv.soft ? ' (мягкая)' : ''}</div>
+      </div>`;
+      document.getElementById('bjPlayersArea').innerHTML = phtml;
+      document.getElementById('bjStack').textContent = bjSoloState.stack;
+      updateBJProfile({ ...bjSoloState.stats, stack: bjSoloState.stack });
+    }
+
+    function renderBJEmpty() {
+      document.getElementById('bjDealerCards').innerHTML = '<div style="color:rgba(255,255,255,0.2);">— —</div>';
+      document.getElementById('bjDealerValue').textContent = '';
+      document.getElementById('bjPlayersArea').innerHTML = '';
+      document.getElementById('bjStack').textContent = bjSoloState.stack;
+      updateBJProfile({ ...bjSoloState.stats, stack: bjSoloState.stack });
+    }
+
+    // BJ Socket handlers
+    socket.on('bjUpdate', (data) => {
+      document.getElementById('bjRoomIdDisplay').textContent = data.roomId;
+      updateBJOnlineLobby(data);
+
+      if (bjSoloMode) return;
+
+      // Update profile stats
+      const me = data.players.find(p => p.id === socket.id);
+      if (me) updateBJProfile({ ...(me.stats || {}), stack: me.stack });
+
+      if (data.state === 'betting') {
+        showBJ('game');
+        document.getElementById('bjBetArea').style.display = 'block';
+        document.getElementById('bjActions').style.display = 'none';
+        document.getElementById('bjNewGameBtn').style.display = 'none';
+        document.getElementById('bjMessage').textContent = 'Сделай ставку';
+        renderBJTable(data);
+      } else if (data.state === 'playing' || data.state === 'dealer') {
+        document.getElementById('bjBetArea').style.display = 'none';
+        document.getElementById('bjActions').style.display = 'block';
+        document.getElementById('bjNewGameBtn').style.display = 'none';
+        const isMyTurn = data.currentPlayerId === socket.id;
+        document.querySelectorAll('#bjActions button').forEach(b => b.disabled = !isMyTurn);
+        const canDouble = me && me.hands[0] && me.hands[0].length === 2 && me.stack >= me.bet;
+        document.getElementById('bjDoubleBtn').style.display = isMyTurn && canDouble ? 'inline-block' : 'none';
+        document.getElementById('bjMessage').textContent = isMyTurn ? 'Твой ход' : 'Ожидай...';
+        renderBJTable(data);
+      } else if (data.state === 'showdown') {
+        document.getElementById('bjActions').style.display = 'none';
+        document.getElementById('bjNewGameBtn').style.display = 'inline-block';
+        const msgs = { win: 'Ты выиграл!', lose: 'Ты проиграл', push: 'Ничья', blackjack: 'Blackjack!', bust: 'Перебор!' };
+        document.getElementById('bjMessage').textContent = me ? (msgs[me.result] || '') : '';
+        renderBJTable(data);
+      } else if (data.state === 'waiting') {
+        showBJ('online');
+      }
+    });
+
+    function updateBJOnlineLobby(data) {
+      if (!data) {
+        return;
+      }
+      const me = data.players.find(p => p.id === socket.id);
+      const isAdmin = me && me.isAdmin;
+      document.getElementById('bjStartBtn').style.display = isAdmin && data.state === 'waiting' ? 'inline-block' : 'none';
+      const list = document.getElementById('bjPlayersList');
+      list.innerHTML = data.players.map(p =>
+        `<div class="player-spot bj-player-spot" style="position:static; transform:none; min-width:100px;">
+          <div style="font-weight:700;">${sanitizeHtml(p.name)}</div>
+          <div><span class="bj-label">Стек:</span> ${p.stack}</div>
+          ${p.bet > 0 ? '<div><span class="bj-label">Ставка:</span> ' + p.bet + '</div>' : ''}
+        </div>`
+      ).join('');
+      document.getElementById('bjOnlineStatus').textContent = 'Игроков: ' + data.players.length + '/' + 7;
+    }
+
+    function renderBJTable(data) {
+      const dealerCards = data.dealer.cards || [];
+      document.getElementById('bjDealerCards').innerHTML = dealerCards.map(renderBJCard).join('');
+      const dv = bjHandValueCalc(dealerCards.filter(c => c.rank !== '?'));
+      document.getElementById('bjDealerValue').textContent = data.state === 'showdown' || data.state === 'dealer' ? '(' + dv.value + ')' : '';
+
+      const phtml = data.players.map(p => {
+        const isMyTurn = data.currentPlayerId === p.id;
+        const cardsHtml = p.hands && p.hands[0] ? p.hands[0].map(renderBJCard).join('') : '';
+        const hv = p.hands && p.hands[0] ? bjHandValueCalc(p.hands[0].filter(c => c.rank !== '?')) : null;
+        const resultText = p.result === 'win' ? 'Выиграл' : p.result === 'lose' ? 'Проиграл' : p.result === 'push' ? 'Ничья' : p.result === 'blackjack' ? 'Blackjack!' : 'Перебор';
+        return `<div class="player-spot bj-player-spot ${isMyTurn ? 'active-turn' : ''}" style="position:static; transform:none; min-width:130px;">
+          <div style="font-weight:700; font-size:0.9rem;">${sanitizeHtml(p.name)}</div>
+          <div><span class="bj-label">Стек:</span> ${p.stack} <span class="bj-label">| Ставка:</span> ${p.bet || 0}</div>
+          <div style="display:flex; justify-content:center; margin:4px 0;">${cardsHtml}</div>
+          ${hv ? '<div><span class="bj-label">Очки:</span> <strong>' + hv.value + '</strong></div>' : ''}
+          ${p.result ? '<div style="font-weight:700;color:' + (p.result === 'win' || p.result === 'blackjack' ? '#27ae60' : '#e74c3c') + ';">' + resultText + '</div>' : ''}
+        </div>`;
+      }).join('');
+      document.getElementById('bjPlayersArea').innerHTML = phtml;
+      const me = data.players.find(p => p.id === socket.id);
+      if (me) document.getElementById('bjStack').textContent = me.stack;
     }
   </script>
 </body>
