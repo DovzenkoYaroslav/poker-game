@@ -141,6 +141,7 @@
     .btn-fold { background: linear-gradient(135deg, #c0392b, #e74c3c); color: black; }
     .btn-check { background: linear-gradient(135deg, #2471a3, #3498db); color: black; }
     .btn-call { background: linear-gradient(135deg, #d4ac0d, #f1c40f); color: black; }
+    .version { position: fixed; bottom: 6px; right: 10px; font-size: 0.75rem; color: #666; opacity: 0.6; z-index: 9999; }
     .btn-raise { background: linear-gradient(135deg, #d35400, #e67e22); color: black; }
     .btn-allin { background: linear-gradient(135deg, #e67e22, #f39c12); color: black; }
     .btn-leave { background: linear-gradient(135deg, #5d6d7e, #95a5a6); color: black; }
@@ -755,6 +756,7 @@
     <br/>
     <input type="text" id="roomIdInput" placeholder="ID комнаты" maxlength="6" style="text-transform:uppercase;" autocomplete="off" />
     <button onclick="joinRoom()" class="btn-call">Войти в комнату</button>
+    <div class="version" id="versionDisplay"></div>
   </div>
 
   <div id="game-container" style="display: flex; width: 100%;">
@@ -932,6 +934,10 @@
     }
 
     showLobby();
+
+    fetch('/version').then(r => r.json()).then(d => {
+      document.getElementById('versionDisplay').textContent = 'v' + d.version;
+    }).catch(() => {});
 
     // Socket handlers
     socket.on('connect', () => console.log('Connected:', socket.id));
