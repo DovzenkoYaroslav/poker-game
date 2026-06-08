@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Покер с друзьями</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0f1a;
+      --felt: #0d7a3e;
+      --felt-dark: #0a5e2e;
+      --panel: rgba(10, 20, 40, 0.85);
+      --gold: #f0b90b;
+      --gold-light: #fcd535;
+      --red: #e74c3c;
+      --blue: #3498db;
+      --yellow: #f1c40f;
+      --orange: #e67e22;
+      --green: #2ecc71;
+      --gray: #95a5a6;
+      --dark-gray: #2c3e50;
+      --white: #f0f0f0;
+      --text: #e0e0e0;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background: radial-gradient(ellipse at center, #16213e 0%, #0a0f1a 100%);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      background-attachment: fixed;
+    }
+
+    #main-container {
+      display: flex;
+      width: 100%;
+      max-width: 1400px;
+      gap: 15px;
+    }
+
+    .panel-left, .panel-right {
+      width: 280px;
+      background: var(--panel);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      height: fit-content;
+      position: sticky;
+      top: 20px;
+      color: var(--white);
+    }
+
+    .panel-left h3, .panel-right h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.4rem;
+      border-bottom: 2px solid var(--gold);
+      padding-bottom: 8px;
+      margin-bottom: 15px;
+      color: var(--gold-light);
+    }
+
+    .rules ul { list-style: none; padding: 0; }
+    .rules li {
+      margin: 8px 0;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      padding-left: 20px;
+      position: relative;
+    }
+    .rules li::before { content: "♦"; position: absolute; left: 0; color: var(--gold); }
+    .rules .stage-item { font-weight: 600; color: var(--gold-light); }
+    .rules .section-title { font-weight: 700; color: var(--gold-light); margin-top: 15px; margin-bottom: 8px; font-size: 1rem; }
+    .rules table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 12px; }
+    .rules th, .rules td { padding: 10px 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .rules th { color: var(--gold-light); font-weight: 600; }
+    .rules .combo-example { font-family: monospace; font-size: 0.9rem; white-space: nowrap; }
+
+    .profile .stat-row {
+      display: flex;
+      justify-content: space-between;
+      margin: 12px 0;
+      font-size: 0.95rem;
+    }
+    .stat-row span:last-child { font-weight: 600; color: var(--gold); }
+
+    .game-area {
+      flex: 1;
+      background: var(--panel);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 24px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      text-align: center;
+    }
+
+    button {
+      padding: 12px 20px;
+      border-radius: 30px;
+      border: none;
+      margin: 4px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      text-transform: uppercase;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.35);
+      filter: brightness(1.1);
+    }
+    button:active { transform: translateY(0); }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      filter: grayscale(30%);
+      transform: none;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+
+    .btn-start { background: linear-gradient(135deg, #27ae60, #2ecc71); color: black; }
+    .btn-fold { background: linear-gradient(135deg, #c0392b, #e74c3c); color: black; }
+    .btn-check { background: linear-gradient(135deg, #2471a3, #3498db); color: black; }
+    .btn-call { background: linear-gradient(135deg, #d4ac0d, #f1c40f); color: black; }
+    .btn-raise { background: linear-gradient(135deg, #d35400, #e67e22); color: black; }
+    .btn-allin { background: linear-gradient(135deg, #e67e22, #f39c12); color: black; }
+    .btn-leave { background: linear-gradient(135deg, #5d6d7e, #95a5a6); color: black; }
+
+    input[type="text"], input[type="number"] {
+      padding: 12px 15px;
+      border-radius: 30px;
+      border: 2px solid rgba(255,255,255,0.15);
+      background: rgba(0,0,0,0.3);
+      color: white;
+      font-size: 0.95rem;
+      outline: none;
+      transition: 0.3s;
+      margin: 5px;
+    }
+    input:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 10px rgba(240,185,11,0.3);
+    }
+
+    .poker-table {
+      background: radial-gradient(ellipse at center, var(--felt) 0%, var(--felt-dark) 100%);
+      border-radius: 40% / 50%;
+      padding: 40px 50px;
+      text-align: center;
+      margin: 10px auto 20px auto;
+      border: 10px solid #3e2723;
+      box-shadow: inset 0 0 40px rgba(0,0,0,0.6), 0 15px 30px rgba(0,0,0,0.5);
+      width: 100%;
+      max-width: 900px;
+      min-height: 600px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    .poker-table .pot,
+    .poker-table .community-cards {
+      position: relative;
+      z-index: 1;
+    }
+
+    .community-cards {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin: 15px 0;
+      min-height: 84px;
+    }
+
+    .card {
+      width: 64px;
+      height: 90px;
+      background: white;
+      border-radius: 8px;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.3rem;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+      position: relative;
+      transition: transform 0.2s;
+      color: black;
+    }
+    .card:hover { transform: translateY(-3px); }
+    .card.back {
+      background: linear-gradient(135deg, #1e2a38, #2c3e50);
+      color: white;
+      border: 2px solid #aaa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card.heart { color: #e74c3c; }
+    .card.diamond { color: #3498db; }
+    .card.spade { color: #111; }
+    .card.club { color: #27ae60; }
+
+    .players-grid {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px;
+      margin: 15px 0;
+    }
+
+    .player-spot {
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(5px);
+      border-radius: 16px;
+      padding: 12px;
+      min-width: 130px;
+      text-align: center;
+      border: 2px solid rgba(255,255,255,0.2);
+      transition: 0.3s;
+    }
+    .player-spot.active-turn {
+      border-color: var(--gold);
+      box-shadow: 0 0 20px var(--gold);
+      background: rgba(240,185,11,0.1);
+    }
+
+    .pot {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--gold-light);
+      text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    }
+
+    .winner-announce {
+      background: linear-gradient(135deg, #f1c40f, #f39c12);
+      color: #1e1e1e;
+      padding: 12px 20px;
+      border-radius: 30px;
+      margin: 10px 0;
+      font-weight: 700;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+
+    .timer {
+      font-size: 1.5rem;
+      font-weight: 700;
+      background: #1e1e1e;
+      color: var(--gold-light);
+      padding: 6px 18px;
+      border-radius: 30px;
+      margin: 0 auto 10px auto;
+      width: fit-content;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+      border: 2px solid var(--gold);
+    }
+
+    .stage-info {
+      font-style: italic;
+      margin: 8px 0;
+      color: var(--gold-light);
+    }
+
+    .bet-actions {
+      margin: 10px 0;
+      text-align: center;
+    }
+    .bet-actions div {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 100;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.75);
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .modal-content {
+      background: var(--panel);
+      backdrop-filter: blur(15px);
+      padding: 30px;
+      border-radius: 20px;
+      max-width: 900px;
+      width: 100%;
+      max-height: 85vh;
+      overflow-y: auto;
+      color: var(--white);
+      border: 1px solid rgba(255,255,255,0.2);
+      text-align: left;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .close-btn {
+      float: right;
+      cursor: pointer;
+      font-size: 32px;
+      color: #ccc;
+      line-height: 1;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: all 0.2s;
+    }
+    .close-btn:hover { color: white; background: rgba(255,255,255,0.1); }
+
+    /* Убираем скроллбар у модалки комбинаций */
+    #combosModal .modal-content {
+      overflow-y: visible;
+    }
+
+    /* Кастомный скроллбар для модалки правил */
+    #rulesModal .modal-content::-webkit-scrollbar {
+      width: 8px;
+    }
+    #rulesModal .modal-content::-webkit-scrollbar-track {
+      background: rgba(255,255,255,0.05);
+      border-radius: 4px;
+    }
+    #rulesModal .modal-content::-webkit-scrollbar-thumb {
+      background: var(--gold);
+      border-radius: 4px;
+    }
+    #rulesModal .modal-content::-webkit-scrollbar-thumb:hover {
+      background: var(--gold-light);
+    }
+
+    /* Краткий пересказ правил на левой панели */
+    .rules-summary {
+      font-size: 0.95rem;
+      line-height: 1.7;
+      margin-bottom: 15px;
+      color: var(--text);
+    }
+    .rules-summary p {
+      margin: 5px 0;
+      padding-left: 12px;
+      position: relative;
+    }
+    .rules-summary p::before {
+      content: "•";
+      position: absolute;
+      left: 1px;
+      color: var(--gold);
+    }
+
+    /* Рассадка за столом */
+    .seat-grid {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 6px;
+      margin: 12px 0 16px;
+    }
+    .seat-btn {
+      width: 48px;
+      height: 52px;
+      border-radius: 10px;
+      border: 2px solid rgba(255,255,255,0.15);
+      background: rgba(0,0,0,0.3);
+      color: var(--gray);
+      font-size: 0.7rem;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: 0.2s;
+      line-height: 1.2;
+      padding: 2px;
+    }
+    .seat-btn:hover:not(.taken):not(.mine) {
+      border-color: var(--gold);
+      background: rgba(240,185,11,0.1);
+    }
+    .seat-btn.taken {
+      cursor: default;
+      border-color: rgba(255,255,255,0.25);
+      background: rgba(255,255,255,0.08);
+      color: var(--white);
+    }
+    .seat-btn.mine {
+      border-color: var(--gold);
+      background: rgba(240,185,11,0.15);
+      color: var(--gold-light);
+    }
+    .seat-btn .seat-num {
+      font-size: 0.6rem;
+      opacity: 0.5;
+    }
+    .seat-btn .seat-name {
+      font-size: 0.65rem;
+      font-weight: 600;
+      max-width: 42px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .seat-btn.free {
+      color: var(--gray);
+    }
+    .seat-btn.free:hover {
+      color: var(--gold-light);
+    }
+
+    /* Позиции игроков вокруг стола во время игры */
+    .game-table-wrapper {
+      position: relative;
+      padding: 55px 15px;
+      margin: 0 auto;
+      max-width: 960px;
+    }
+    .players-grid {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none;
+    }
+    .player-spot {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      pointer-events: auto;
+      min-width: 120px;
+      background: rgba(0,0,0,0.55);
+      border-radius: 12px;
+      padding: 4px 10px;
+      text-align: center;
+      border: 1px solid rgba(255,255,255,0.1);
+      backdrop-filter: blur(4px);
+    }
+
+    /* Мини-стол в лобби */
+    .mini-table-wrapper {
+      display: flex;
+      justify-content: center;
+      margin: 12px auto;
+    }
+    .mini-table {
+      position: relative;
+      width: 280px;
+      height: 160px;
+      background: radial-gradient(ellipse at center, #0d7a3e 0%, #0a5e2e 100%);
+      border-radius: 40% / 50%;
+      border: 4px solid #3e2723;
+      box-shadow: inset 0 0 15px rgba(0,0,0,0.4);
+    }
+    .mini-seats {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+    }
+    .mini-dot {
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.55rem;
+      font-weight: 700;
+      color: #fff;
+      transition: 0.2s;
+    }
+    .mini-dot.free {
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.25);
+    }
+    .mini-dot.taken {
+      background: var(--gold);
+      border: 1px solid var(--gold-light);
+      color: #000;
+    }
+    .mini-dot.mine {
+      background: #fcd535;
+      border: 2px solid #fff;
+      color: #000;
+      box-shadow: 0 0 8px rgba(240,185,11,0.6);
+    }
+
+    .raise-option {
+      display: block;
+      width: 100%;
+      margin: 8px 0;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .position-badge {
+      font-size: 0.8rem;
+      background: rgba(255,255,255,0.15);
+      border-radius: 10px;
+      padding: 2px 8px;
+      margin-left: 5px;
+    }
+    .dealer-chip {
+      display: inline-block;
+      background: white;
+      color: black;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      line-height: 20px;
+      font-size: 0.8rem;
+      font-weight: bold;
+      margin-right: 5px;
+    }
+
+    #lobby {
+      background: var(--panel);
+      backdrop-filter: blur(10px);
+      padding: 40px;
+      border-radius: 24px;
+      text-align: center;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    }
+    #lobby h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.2rem;
+      margin-bottom: 25px;
+      color: var(--gold-light);
+    }
+
+    .error-toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--red);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 30px;
+      font-weight: 600;
+      z-index: 200;
+      animation: slideUp 0.3s ease;
+    }
+    @keyframes slideUp { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+
+    .game-starting-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.85);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 300;
+      flex-direction: column;
+    }
+    .game-starting-overlay.visible { display: flex; }
+    .countdown-circle {
+      width: 200px; height: 200px;
+      border: 8px solid rgba(255,255,255,0.1);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .countdown-number {
+      font-size: 5rem;
+      font-weight: 700;
+      color: var(--gold-light);
+      font-family: 'Playfair Display', serif;
+    }
+    .countdown-text { margin-top: 20px; font-size: 1.2rem; color: var(--white); }
+
+    @media (max-width: 1000px) {
+      #main-container { flex-direction: column; }
+      .panel-left, .panel-right { width: 100%; position: static; margin-bottom: 15px; }
+      .poker-table { max-width: 90vw; aspect-ratio: auto; padding: 25px; }
+      .game-table-wrapper { padding: 40px 8px; }
+      .player-spot { min-width: 90px; font-size: 0.8rem; padding: 3px 6px; }
+      .modal-content { max-width: 95vw; padding: 20px; }
+      .countdown-circle { width: 150px; height: 150px; }
+      .countdown-number { font-size: 3.5rem; }
+      .rules table { font-size: 0.75rem; }
+      .rules th, .rules td { padding: 8px 6px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Модалка: Правила (ШИРОКАЯ) -->
+  <div id="rulesModal" class="modal">
+    <div class="modal-content">
+      <span class="close-btn" onclick="closeRules()">&times;</span>
+      <h3 style="font-family:'Playfair Display'; color:var(--gold-light); margin-bottom:24px; font-size:1.6rem;">📖 Правила техасского холдема</h3>
+      <div class="rules" style="line-height:1.7;">
+        <div class="section-title">Суть игры</div>
+        <p style="margin-bottom:18px;">Каждому игроку раздаётся по 2 личные карты. Затем на стол выкладываются 5 общих карт. Из своих 2 + 5 общих нужно собрать лучшую покерную комбинацию из 5 карт. Побеждает тот, у кого комбинация старше.</p>
+        
+        <div class="section-title">Стадии игры</div>
+        <ul>
+          <li><span class="stage-item">Префлоп</span> – у каждого по 2 карты на руках. Никаких общих карт ещё нет.</li>
+          <li><span class="stage-item">Флоп</span> – открываются 3 общие карты.</li>
+          <li><span class="stage-item">Тёрн</span> – открывается 4-я общая карта.</li>
+          <li><span class="stage-item">Ривер</span> – открывается 5-я общая карта.</li>
+        </ul>
+        <p style="margin:12px 0; font-style:italic;">После каждой стадии проходит круг торгов (ставок).</p>
+        
+        <div class="section-title">Действия (что можно делать, когда твоя очередь)</div>
+        <ul>
+          <li><span style="color:#e74c3c;">Фолд (сброс)</span> – отказаться от борьбы, потеряв уже поставленные деньги.</li>
+          <li><span style="color:#3498db;">Чек (пропуск)</span> – не ставить, если до тебя никто не повышал. Просто передать ход.</li>
+          <li><span style="color:#f1c40f;">Колл (уравнять)</span> – поставить столько же, сколько поставил предыдущий игрок.</li>
+          <li><span style="color:#e67e22;">Рейз (поднять)</span> – увеличить текущую ставку.</li>
+        </ul>
+        
+        <div class="section-title">Позиции за столом</div>
+        <p style="margin-bottom:12px;">Позиция определяет, когда ты говоришь: рано или поздно. Чем позже ход, тем больше информации у тебя есть.</p>
+        <ul>
+          <li><b>Малый блайнд (SB)</b> – игрок слева от дилера. Обязательно делает маленькую ставку до раздачи.</li>
+          <li><b>Большой блайнд (BB)</b> – следующий игрок после SB. Делает ставку в 2 раза больше SB.</li>
+          <li><b>Ранние позиции (UTG и т.д.)</b> – говорят первыми после префлопа. Самые невыгодные.</li>
+          <li><b>Средние позиции (MP)</b> – чуть лучше.</li>
+          <li><b>Поздние позиции (CO, BTN)</b> – самые выгодные. Видят ходы всех остальных.</li>
+          <li><b>Баттон (BTN, дилер)</b> – фишка дилера. Его позиция считается самой лучшей.</li>
+        </ul>
+        
+        <div class="section-title">Фишка дилера (баттон)</div>
+        <ul>
+          <li>Передаётся по часовой стрелке после каждой раздачи.</li>
+          <li>Показывает, кто условно «сдаёт» карты.</li>
+          <li>Игроки слева от баттона становятся малым и большим блайндами.</li>
+        </ul>
+        
+        <div class="section-title">Карты</div>
+        <p style="margin-bottom:12px;">В игре стандартная колода из 52 карт (4 масти: ♠ ♥ ♣ ♦, 13 рангов: 2,3,4,5,6,7,8,9,10, Валет, Дама, Король, Туз).</p>
+        
+        <div class="section-title">Цвета мастей</div>
+        <ul>
+          <li>Пики ♠ - черный</li>
+          <li>Червы ♥ - красный</li>
+          <li>Трефы (или крести) ♣ - зеленый</li>
+          <li>Бубны (или буби) ♦ - синий</li>
+        </ul>
+        
+        <div class="section-title">⚙️ Важные правила для игры</div>
+        <ul>
+          <li>Торги начинаются с игрока слева от большого блайнда (на префлопе) и с игрока слева от баттона (на флопе, тёрне, ривере).</li>
+          <li>Минимальный рейз – не меньше, чем предыдущий рейз.</li>
+          <li>Если после твоего рейза никто не поддерживает – ты забираешь банк без вскрытия.</li>
+          <li>На вскрытии (шоудауне) – показывают карты игроки, которые дошли до конца. Выигрывает старшая комбинация.</li>
+          <li>Туз может быть и старшей картой (в стритах 10-В-Д-К-Т) и младшей (Т-2-3-4-5). Это единственное исключение.</li>
+          <li>Если у двух игроков одинаковая комбинация – сравнивают «кикеры» (следующие по старшинству карты, не входящие в комбинацию). Если и кикеры одинаковы – банк делится поровну.</li>
+        </ul>
+        
+        <div class="section-title">Покерные комбинации (от старшей к младшей)</div>
+        <table>
+          <thead>
+            <tr><th style="width:25%;">Комбинация</th><th style="width:40%;">Пример</th><th>Как собрать</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><b>Роял-флеш</b></td><td class="combo-example"><span class="card-inline spade">A♠</span><span class="card-inline spade">K♠</span><span class="card-inline spade">Q♠</span><span class="card-inline spade">J♠</span><span class="card-inline spade">10♠</span></td><td>Старший стрит-флеш (10–Туз одной масти)</td></tr>
+            <tr><td><b>Стрит-флеш</b></td><td class="combo-example"><span class="card-inline heart">9♥</span><span class="card-inline heart">8♥</span><span class="card-inline heart">7♥</span><span class="card-inline heart">6♥</span><span class="card-inline heart">5♥</span></td><td>5 карт подряд одной масти</td></tr>
+            <tr><td><b>Каре</b></td><td class="combo-example"><span class="card-inline club">7♣</span><span class="card-inline spade">7♠</span><span class="card-inline heart">7♥</span><span class="card-inline diamond">7♦</span> + любая</td><td>Четыре одинаковых ранга</td></tr>
+            <tr><td><b>Фулл-хаус</b></td><td class="combo-example"><span class="card-inline spade">K♠</span><span class="card-inline club">K♣</span><span class="card-inline heart">K♥</span> <span class="card-inline diamond">4♦</span><span class="card-inline spade">4♠</span></td><td>Тройка + пара</td></tr>
+            <tr><td><b>Флеш</b></td><td class="combo-example"><span class="card-inline diamond">A♦</span><span class="card-inline diamond">10♦</span><span class="card-inline diamond">7♦</span><span class="card-inline diamond">4♦</span><span class="card-inline diamond">2♦</span></td><td>Пять карт одной масти (не подряд)</td></tr>
+            <tr><td><b>Стрит</b></td><td class="combo-example"><span class="card-inline club">10♣</span><span class="card-inline heart">9♥</span><span class="card-inline spade">8♠</span><span class="card-inline diamond">7♦</span><span class="card-inline club">6♣</span></td><td>Пять карт подряд (разные масти)</td></tr>
+            <tr><td><b>Сет (тройка)</b></td><td class="combo-example"><span class="card-inline club">Q♣</span><span class="card-inline spade">Q♠</span><span class="card-inline heart">Q♥</span> <span class="card-inline diamond">8♦</span><span class="card-inline spade">2♠</span></td><td>Три карты одного ранга</td></tr>
+            <tr><td><b>Две пары</b></td><td class="combo-example"><span class="card-inline spade">J♠</span><span class="card-inline club">J♣</span> <span class="card-inline diamond">5♦</span><span class="card-inline heart">5♥</span> <span class="card-inline spade">A♠</span></td><td>Две разные пары</td></tr>
+            <tr><td><b>Пара</b></td><td class="combo-example"><span class="card-inline heart">8♥</span><span class="card-inline club">8♣</span> <span class="card-inline diamond">K♦</span><span class="card-inline spade">10♠</span><span class="card-inline heart">3♥</span></td><td>Две карты одного ранга</td></tr>
+            <tr><td><b>Старшая карта</b></td><td class="combo-example"><span class="card-inline spade">A♠</span><span class="card-inline diamond">10♦</span><span class="card-inline club">9♣</span><span class="card-inline heart">6♥</span><span class="card-inline spade">4♠</span></td><td>Ничего из вышеперечисленного. Выигрывает тот, у кого старший кикер</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:18px; font-weight:600; color:var(--gold-light);">Важно: В холдеме можно использовать 0, 1 или 2 свои карты. Остальные 5 берутся с общего стола.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модалка: Комбинации (ШИРОКАЯ) -->
+  <div id="combosModal" class="modal">
+    <div class="modal-content">
+      <span class="close-btn" onclick="closeCombos()">&times;</span>
+      <h3 style="font-family:'Playfair Display'; color:var(--gold-light); margin-bottom:24px; font-size:1.6rem;">🃏 Покерные комбинации</h3>
+      <div>
+        <table class="rules" style="margin:0;">
+          <thead>
+            <tr><th style="width:25%;">Комбинация</th><th style="width:40%;">Пример</th><th>Описание</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><b>Роял-флеш</b></td><td class="combo-example"><span class="card-inline spade">A♠</span><span class="card-inline spade">K♠</span><span class="card-inline spade">Q♠</span><span class="card-inline spade">J♠</span><span class="card-inline spade">10♠</span></td><td>Старший стрит-флеш (10–Туз одной масти)</td></tr>
+            <tr><td><b>Стрит-флеш</b></td><td class="combo-example"><span class="card-inline heart">9♥</span><span class="card-inline heart">8♥</span><span class="card-inline heart">7♥</span><span class="card-inline heart">6♥</span><span class="card-inline heart">5♥</span></td><td>5 карт подряд одной масти</td></tr>
+            <tr><td><b>Каре</b></td><td class="combo-example"><span class="card-inline club">7♣</span><span class="card-inline spade">7♠</span><span class="card-inline heart">7♥</span><span class="card-inline diamond">7♦</span> + любая</td><td>Четыре одинаковых ранга</td></tr>
+            <tr><td><b>Фулл-хаус</b></td><td class="combo-example"><span class="card-inline spade">K♠</span><span class="card-inline club">K♣</span><span class="card-inline heart">K♥</span> <span class="card-inline diamond">4♦</span><span class="card-inline spade">4♠</span></td><td>Тройка + пара</td></tr>
+            <tr><td><b>Флеш</b></td><td class="combo-example"><span class="card-inline diamond">A♦</span><span class="card-inline diamond">10♦</span><span class="card-inline diamond">7♦</span><span class="card-inline diamond">4♦</span><span class="card-inline diamond">2♦</span></td><td>Пять карт одной масти (не подряд)</td></tr>
+            <tr><td><b>Стрит</b></td><td class="combo-example"><span class="card-inline club">10♣</span><span class="card-inline heart">9♥</span><span class="card-inline spade">8♠</span><span class="card-inline diamond">7♦</span><span class="card-inline club">6♣</span></td><td>Пять карт подряд (разные масти)</td></tr>
+            <tr><td><b>Сет (тройка)</b></td><td class="combo-example"><span class="card-inline club">Q♣</span><span class="card-inline spade">Q♠</span><span class="card-inline heart">Q♥</span> <span class="card-inline diamond">8♦</span><span class="card-inline spade">2♠</span></td><td>Три карты одного ранга</td></tr>
+            <tr><td><b>Две пары</b></td><td class="combo-example"><span class="card-inline spade">J♠</span><span class="card-inline club">J♣</span> <span class="card-inline diamond">5♦</span><span class="card-inline heart">5♥</span> <span class="card-inline spade">A♠</span></td><td>Две разные пары</td></tr>
+            <tr><td><b>Пара</b></td><td class="combo-example"><span class="card-inline heart">8♥</span><span class="card-inline club">8♣</span> <span class="card-inline diamond">K♦</span><span class="card-inline spade">10♠</span><span class="card-inline heart">3♥</span></td><td>Две карты одного ранга</td></tr>
+            <tr><td><b>Старшая карта</b></td><td class="combo-example"><span class="card-inline spade">A♠</span><span class="card-inline diamond">10♦</span><span class="card-inline club">9♣</span><span class="card-inline heart">6♥</span><span class="card-inline spade">4♠</span></td><td>Ничего из вышеперечисленного. Выигрывает тот, у кого старший кикер</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:18px; font-weight:600; color:var(--gold-light);">Важно: В холдеме можно использовать 0, 1 или 2 свои карты. Остальные 5 берутся с общего стола.</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="raiseModal" class="modal">
+    <div class="modal-content" style="max-width:400px; text-align:center;">
+      <span class="close-btn" onclick="closeRaiseModal()">&times;</span>
+      <h3 style="font-family:'Playfair Display'; color:var(--gold-light); margin-bottom:16px;">Выберите размер рейза</h3>
+      <p id="minRaiseInfo" style="margin: 8px 0;">Мин. рейз: 0</p>
+      <button class="btn-raise raise-option" onclick="selectRaise(33)">33% банка</button>
+      <button class="btn-raise raise-option" onclick="selectRaise(50)">50% банка</button>
+      <button class="btn-raise raise-option" onclick="selectRaise(75)">75% банка</button>
+      <button class="btn-raise raise-option" onclick="selectRaise(100)">100% банка</button>
+      <button class="btn-allin raise-option" onclick="selectAllin()">All‑in</button>
+    </div>
+  </div>
+
+  <!-- Overlay 10-секундного отсчёта перед стартом -->
+  <div id="gameStartingOverlay" class="game-starting-overlay">
+    <div class="countdown-circle">
+      <span class="countdown-number" id="startCountdownNumber">10</span>
+    </div>
+    <div class="countdown-text">Игра начнётся через <span id="startCountdownText">10</span> сек</div>
+  </div>
+
+  <!-- Лобби (без отображения комнаты до входа) -->
+  <div id="lobby" style="display: block;">
+    <h2>♠️ Покер с друзьями ♥️</h2>
+    <input type="text" id="playerName" placeholder="Твоё имя" maxlength="20" autocomplete="off" />
+    <button onclick="createRoom()" class="btn-start";>Создать комнату</button>
+    <br/>
+    <input type="text" id="roomIdInput" placeholder="ID комнаты" maxlength="6" style="text-transform:uppercase;" autocomplete="off" />
+    <button onclick="joinRoom()" class="btn-call">Войти в комнату</button>
+  </div>
+
+  <div id="game-container" style="display: flex; width: 100%;">
+    <div class="panel-left rules">
+      <h3>📖 Правила</h3>
+      <div class="rules-summary">
+        <p><b>Цель:</b> собрать лучшую комбинацию из 5 карт (2 свои + 5 общих).</p>
+        <p><b>Ходы:</b> фолд (сброс), чек (пропуск), колл (уравнять), рейз (поднять).</p>
+        <p><b>Стадии:</b> префлоп → <span class="stage-item">флоп</span> → <span class="stage-item">тёрн</span> → <span class="stage-item">ривер</span>.</p>
+        <p><b>Блайнды:</b> <abbr title="Малый блайнд">SB</abbr> и <abbr title="Большой блайнд">BB</abbr> — обязательные ставки слева от дилера.</p>
+      </div>
+      <button class="btn-start" onclick="openRules()" style="width:100%; margin-bottom:8px;">📖 Полные правила</button>
+      <button class="btn-start" onclick="openCombos()" style="width:100%;">🃏 Комбинации</button>
+    </div>
+
+    <div class="game-area" id="gameArea">
+      <div id="game" style="display: none; width: 100%;">
+        <div id="turnIndicator" style="margin-bottom: 10px; font-weight: 700; font-size:1.2rem;">Ход: <span style="color:var(--gold-light);"></span></div>
+        <div class="timer" id="turnTimer">30</div>
+        <div class="game-table-wrapper">
+          <div class="poker-table">
+            <div class="pot">Банк: <span id="potAmount">0</span></div>
+            <div class="community-cards" id="communityCards"></div>
+          </div>
+          <div class="players-grid" id="playersContainer"></div>
+        </div>
+        <div class="stage-info" id="stageInfo"></div>
+        <div id="myCards" style="text-align: center; margin: 10px 0;"></div>
+        <div class="bet-actions">
+          <div>
+            <button onclick="sendAction('fold')" class="btn-fold">Фолд</button>
+            <button onclick="sendAction('check')" class="btn-check" id="btnCheck">Чек</button>
+            <button onclick="sendAction('call')" class="btn-call">Колл</button>
+            <button onclick="openRaiseModal()" class="btn-raise" id="btnRaise">Рейз</button>
+            <button onclick="leaveGame()" class="btn-leave" style="margin-left:10px;">Выйти</button>
+          </div>
+        </div>
+        <div id="statusMessage" style="text-align: center; font-weight: bold; margin-top:10px;"></div>
+      </div>
+      <div id="lobbyInGame" style="display: none; text-align: center; padding: 30px;">
+        <div id="room-info" style="display:none; text-align:center; padding:12px; margin-bottom:15px; background:rgba(255,255,255,0.05); border-radius:12px;">
+          <p style="font-size:0.9rem; color:var(--gray);">ID комнаты: <span id="roomIdDisplay" style="color:var(--gold-light); font-weight:700; font-size:1.3rem; letter-spacing:2px;"></span></p>
+          <p style="font-size:0.8rem; color:var(--gray);">Поделитесь этим ID с друзьями</p>
+        </div>
+        <p style="font-size:1rem; margin-bottom:8px;">Выберите место за столом:</p>
+        <div class="seat-grid" id="seatGrid"></div>
+        <div class="mini-table-wrapper">
+          <div class="mini-table">
+            <div class="mini-seats" id="miniSeats"></div>
+          </div>
+        </div>
+        <p id="botHint2" style="display:none; color:#aaa; font-style:italic;">Сейчас вы один – будет добавлен бот</p>
+        <button id="startGameBtn2" class="btn-start" style="display:none; margin-top:8px;" onclick="startGame()">Начать игру</button>
+        <button class="btn-leave" onclick="leaveRoom()" style="margin-top:10px;">Покинуть комнату</button>
+      </div>
+    </div>
+
+    <div class="panel-right profile">
+      <h3>👤 Профиль</h3>
+      <div id="profileStats">
+        <div class="stat-row"><span>Баланс:</span> <span id="statBalance">0</span></div>
+        <div class="stat-row"><span>Ходов:</span> <span id="statActions">0</span></div>
+        <div class="stat-row"><span>Макс. выигрыш:</span> <span id="statMaxWin">0</span></div>
+        <div class="stat-row"><span>Макс. ставка:</span> <span id="statMaxBet">0</span></div>
+        <div class="stat-row"><span>Побед:</span> <span id="statWins">0</span></div>
+        <div class="stat-row"><span>Винрейт:</span> <span id="statWinrate">0%</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Стили для инлайн-карт в таблицах -->
+  <style>
+    .card-inline {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.4em;
+      height: 2.4em;
+      background: white;
+      border-radius: 5px;
+      font-weight: 700;
+      font-size: 1.1em;
+      margin: 0 3px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      color: black;
+    }
+    .card-inline.heart { color: #e74c3c; }
+    .card-inline.diamond { color: #3498db; }
+    .card-inline.spade { color: #111; }
+    .card-inline.club { color: #27ae60; }
+  </style>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    // Утилиты
+    function sanitizeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function isValidName(name) {
+      return /^[а-яА-ЯёЁa-zA-Z0-9_\- ]{1,20}$/.test(name.trim());
+    }
+
+    function showError(msg) {
+      const existing = document.querySelector('.error-toast');
+      if (existing) existing.remove();
+      const el = document.createElement('div');
+      el.className = 'error-toast';
+      el.textContent = msg;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 3000);
+    }
+
+    // Рендер карты (для игрового стола)
+    function renderCard(card) {
+      if (!card) return '';
+      let suitClass = '';
+      switch (card.suit) {
+        case '♥': suitClass = 'heart'; break;
+        case '♦': suitClass = 'diamond'; break;
+        case '♠': suitClass = 'spade'; break;
+        case '♣': suitClass = 'club'; break;
+      }
+      return `<div class="card ${suitClass}">${sanitizeHtml(card.rank)}${sanitizeHtml(card.suit)}</div>`;
+    }
+
+    // Состояние
+    const socket = io({ reconnection: true, reconnectionAttempts: 5, reconnectionDelay: 1000 });
+    let myId = null, currentRoomId = null, gameActive = false, countdownInterval = null;
+    let currentMinRaise = 0;
+
+    // Модалки
+    function openRules() { document.getElementById('rulesModal').style.display = 'flex'; }
+    function closeRules() { document.getElementById('rulesModal').style.display = 'none'; }
+    function openCombos() { document.getElementById('combosModal').style.display = 'flex'; }
+    function closeCombos() { document.getElementById('combosModal').style.display = 'none'; }
+
+    function openRaiseModal() {
+      document.getElementById('minRaiseInfo').textContent = `Мин. рейз: ${currentMinRaise}`;
+      document.getElementById('raiseModal').style.display = 'flex';
+    }
+    function closeRaiseModal() {
+      document.getElementById('raiseModal').style.display = 'none';
+    }
+
+    function selectRaise(percent) {
+      const pot = parseInt(document.getElementById('potAmount').textContent) || 0;
+      const currentBet = window._currentBet || 0;
+      const raiseBy = Math.ceil(pot * percent / 100);
+      let raiseAmount = currentBet + raiseBy;
+      if (raiseAmount < currentMinRaise) raiseAmount = currentMinRaise;
+      socket.emit('action', { action: 'raise', amount: raiseAmount });
+      closeRaiseModal();
+    }
+
+    function selectAllin() {
+      socket.emit('action', { action: 'allin' });
+      closeRaiseModal();
+    }
+
+    // UI переключение
+    function showLobby() {
+      document.getElementById('lobby').style.display = 'block';
+      document.getElementById('game-container').style.display = 'none';
+      gameActive = false;
+    }
+    function showGameContainer() {
+      document.getElementById('lobby').style.display = 'none';
+      document.getElementById('game-container').style.display = 'flex';
+    }
+
+    showLobby();
+
+    // Socket handlers
+    socket.on('connect', () => console.log('Connected:', socket.id));
+    socket.on('disconnect', (reason) => console.log('Disconnected:', reason));
+    socket.on('connect_error', (err) => { console.error('Connection error:', err); showError('Ошибка соединения с сервером'); });
+
+    // 10-секундный обратный отсчёт перед стартом
+    socket.on('gameStarting', (data) => {
+      const overlay = document.getElementById('gameStartingOverlay');
+      overlay.classList.add('visible');
+      document.getElementById('startCountdownNumber').textContent = data.remaining;
+      document.getElementById('startCountdownText').textContent = data.remaining;
+    });
+
+    socket.on('updateGame', (data) => {
+      document.getElementById('gameStartingOverlay').classList.remove('visible');
+
+      if (!data.roomId) {
+        showLobby();
+        return;
+      }
+
+      myId = data.myId;
+      currentRoomId = data.roomId;
+
+      document.getElementById('roomIdDisplay').textContent = data.roomId;
+      document.getElementById('room-info').style.display = 'block';
+
+      if (data.gameState) {
+        window._currentBet = data.gameState.currentBet;
+        currentMinRaise = data.gameState.minRaise || 0;
+        const me = data.players.find(p => p.id === myId);
+        window._playerCurrentBet = me ? me.currentBet : 0;
+      } else {
+        window._currentBet = 0;
+        currentMinRaise = 0;
+        window._playerCurrentBet = 0;
+      }
+
+      if (data.gameState && data.gameState.stage !== 'waiting') {
+        showGameContainer();
+        document.getElementById('game').style.display = 'block';
+        document.getElementById('lobbyInGame').style.display = 'none';
+        gameActive = true;
+        renderGame(data);
+        startCountdown(data.gameState.turnDeadline);
+      } else {
+        showGameContainer();
+        document.getElementById('game').style.display = 'none';
+        document.getElementById('lobbyInGame').style.display = 'block';
+        gameActive = false;
+        renderLobbyInGame(data);
+        updateProfile(data.myStats);
+        clearCountdown();
+        document.getElementById('turnTimer').textContent = '30';
+      }
+    });
+
+    function clearCountdown() {
+      if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+      }
+    }
+
+    function startCountdown(deadline) {
+      clearCountdown();
+      if (!deadline) { document.getElementById('turnTimer').textContent = '30'; return; }
+      countdownInterval = setInterval(() => {
+        const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+        document.getElementById('turnTimer').textContent = remaining;
+        if (remaining <= 0) clearCountdown();
+      }, 200);
+    }
+
+    function updateProfile(stats) {
+      if (!stats) return;
+      document.getElementById('statBalance').textContent = stats.stack ?? 0;
+      document.getElementById('statActions').textContent = stats.actions ?? 0;
+      document.getElementById('statMaxWin').textContent = stats.maxWin ?? 0;
+      document.getElementById('statMaxBet').textContent = stats.maxBet ?? 0;
+      document.getElementById('statWins').textContent = stats.wins ?? 0;
+      const rate = stats.handsPlayed ? ((stats.wins / stats.handsPlayed) * 100).toFixed(1) : 0;
+      document.getElementById('statWinrate').textContent = rate + '%';
+    }
+
+    // Рендер лобби в игре
+    const MINI_DOT_POS = [
+      { left: 24, top: 90 },   // 0 - bottom-left
+      { left: 10, top: 78 },   // 1 - bottom-left diag
+      { left: 4, top: 50 },    // 2 - left
+      { left: 10, top: 22 },   // 3 - top-left diag
+      { left: 24, top: 10 },   // 4 - top-left
+      { left: 76, top: 10 },   // 5 - top-right
+      { left: 90, top: 22 },   // 6 - top-right diag
+      { left: 96, top: 50 },   // 7 - right
+      { left: 90, top: 78 },   // 8 - bottom-right diag
+      { left: 76, top: 90 },   // 9 - bottom-right
+    ];
+
+    function renderLobbyInGame(data) {
+      const humanPlayers = data.players ? data.players.filter(p => !p.isBot) : [];
+      const isAdmin = data.players && data.players.find(p => p.id === myId)?.isAdmin;
+      const btn = document.getElementById('startGameBtn2');
+      const botHint = document.getElementById('botHint2');
+      if (isAdmin && humanPlayers.length >= 1 && !data.gameState) {
+        btn.style.display = 'inline-block';
+        botHint.style.display = humanPlayers.length === 1 ? 'block' : 'none';
+      } else {
+        btn.style.display = 'none';
+        botHint.style.display = 'none';
+      }
+      // Рендер мест (сетка)
+      const seatGrid = document.getElementById('seatGrid');
+      let html = '';
+      for (let i = 0; i < 10; i++) {
+        const player = data.players.find(p => p.seat === i);
+        if (player) {
+          const isMine = player.id === myId;
+          html += `<div class="seat-btn taken${isMine ? ' mine' : ''}" title="${sanitizeHtml(player.name)}">
+            <span class="seat-name">${sanitizeHtml(player.name)}</span>
+            <span class="seat-num">мест ${i}</span>
+          </div>`;
+        } else {
+          html += `<div class="seat-btn free" onclick="selectSeat(${i})">
+            <span>своб.</span>
+            <span class="seat-num">мест ${i}</span>
+          </div>`;
+        }
+      }
+      seatGrid.innerHTML = html;
+      // Рендер мини-стола
+      const miniSeats = document.getElementById('miniSeats');
+      let mHtml = '';
+      for (let i = 0; i < 10; i++) {
+        const player = data.players.find(p => p.seat === i);
+        const pos = MINI_DOT_POS[i];
+        if (player) {
+          const isMine = player.id === myId;
+          mHtml += `<div class="mini-dot taken${isMine ? ' mine' : ''}" style="left:${pos.left}%;top:${pos.top}%;" title="${sanitizeHtml(player.name)}">${i}</div>`;
+        } else {
+          mHtml += `<div class="mini-dot free" style="left:${pos.left}%;top:${pos.top}%;">${i}</div>`;
+        }
+      }
+      miniSeats.innerHTML = mHtml;
+    }
+
+    function selectSeat(seat) {
+      socket.emit('selectSeat', seat, (res) => {
+        if (!res?.success) showError(res?.message || 'Не удалось занять место');
+      });
+    }
+
+    // Позиции мест вокруг стола (% от game-table-wrapper)
+    // 2 снизу, 2 сверху, 1 слева, 1 справа, остальные по диагоналям
+    const SEAT_POSITIONS = [
+      { left: 26, top: 95 },   // 0 - bottom-left
+      { left: 10, top: 82 },   // 1 - bottom-left diagonal
+      { left: 2, top: 50 },    // 2 - left
+      { left: 10, top: 18 },   // 3 - top-left diagonal
+      { left: 26, top: 5 },    // 4 - top-left
+      { left: 74, top: 5 },    // 5 - top-right
+      { left: 90, top: 18 },   // 6 - top-right diagonal
+      { left: 98, top: 50 },   // 7 - right
+      { left: 90, top: 82 },   // 8 - bottom-right diagonal
+      { left: 74, top: 95 },   // 9 - bottom-right
+    ];
+
+    // Рендер игры
+    function renderGame(data) {
+      const gs = data.gameState;
+      if (!gs) return;
+
+      document.getElementById('potAmount').textContent = gs.pot;
+      
+      const communityHtml = gs.communityCards.map(c => renderCard(c)).join('');
+      document.getElementById('communityCards').innerHTML = communityHtml || '<div style="color:rgba(255,255,255,0.2);">— — — — —</div>';
+
+      const currentPlayer = data.players.find(p => p.id === gs.currentPlayerId);
+      const turnIndicator = document.getElementById('turnIndicator');
+      if (turnIndicator) {
+        const span = turnIndicator.querySelector('span');
+        if (span) span.textContent = currentPlayer ? sanitizeHtml(currentPlayer.name) : '';
+      }
+
+      const stageNames = { preflop: 'Префлоп', flop: 'Флоп', turn: 'Тёрн', river: 'Ривер' };
+      document.getElementById('stageInfo').textContent = 'Стадия: ' + (stageNames[gs.stage] || gs.stage);
+
+      document.getElementById('playersContainer').innerHTML = data.players.map(p => {
+        const dealerChip = p.isDealer ? '<span class="dealer-chip">D</span>' : '';
+        const posBadge = p.position ? `<span class="position-badge">${sanitizeHtml(p.position)}</span>` : '';
+        const cardsHtml = p.cards?.length ? p.cards.map(c => renderCard(c)).join('') : '<div class="card back">?</div><div class="card back">?</div>';
+        const activeClass = (gs.currentPlayerId === p.id) ? 'active-turn' : '';
+        const pos = SEAT_POSITIONS[p.seat] || SEAT_POSITIONS[0];
+        return `<div class="player-spot ${activeClass}" style="left:${pos.left}%;top:${pos.top}%;">
+          <div>${dealerChip}${sanitizeHtml(p.name)} ${posBadge}</div>
+          <div>Стек: ${p.stack}</div>
+          <div>Ставка: ${p.currentBet || 0}</div>
+          <div style="display:flex; justify-content:center;">${cardsHtml}</div>
+          ${p.handResult ? `<div><strong>${sanitizeHtml(p.handResult.name)}</strong></div>` : ''}
+        </div>`;
+      }).join('');
+
+      const me = data.players.find(p => p.id === myId);
+      document.getElementById('myCards').innerHTML = me?.cards?.length ? '<strong>Твои карты:</strong> ' + me.cards.map(renderCard).join('') : '';
+
+      const statusDiv = document.getElementById('statusMessage');
+      statusDiv.innerHTML = gs.winners ? `<div class="winner-announce">🏆 Победитель: ${gs.winners.map(w => sanitizeHtml(w.name) + ' (' + sanitizeHtml(w.hand) + ')').join(', ')}</div>` : '';
+
+      const myTurn = gs.currentPlayerId === myId;
+      const canCheck = me && me.currentBet >= gs.currentBet;
+      document.getElementById('btnCheck').disabled = !myTurn || !canCheck;
+      const allBtns = document.querySelectorAll('.bet-actions button');
+      allBtns.forEach(b => {
+        if (!b.classList.contains('btn-leave') && b.id !== 'btnCheck') {
+          b.disabled = !myTurn;
+        }
+      });
+
+      updateProfile(data.myStats);
+    }
+
+    // Actions
+    function createRoom() {
+      const name = document.getElementById('playerName').value.trim();
+      if (!isValidName(name)) return showError('Имя: 1-20 символов (буквы, цифры, пробел, -, _)');
+      socket.emit('createRoom', name, (res) => {
+        if (res.success) {
+          document.getElementById('room-info').style.display = 'block';
+          showGameContainer();
+        } else {
+          showError(res.message);
+        }
+      });
+    }
+
+    function joinRoom() {
+      const name = document.getElementById('playerName').value.trim();
+      const roomId = document.getElementById('roomIdInput').value.trim().toUpperCase();
+      if (!isValidName(name)) return showError('Имя: 1-20 символов (буквы, цифры, пробел, -, _)');
+      if (!/^[A-Z0-9]{6}$/.test(roomId)) return showError('ID комнаты: 6 символов A-Z0-9');
+      socket.emit('joinRoom', { playerName: name, roomId }, (res) => {
+        if (!res.success) showError(res.message);
+        else {
+          document.getElementById('room-info').style.display = 'block';
+          showGameContainer();
+        }
+      });
+    }
+
+    function startGame() { socket.emit('startGame'); }
+    function sendAction(action) { socket.emit('action', { action }); }
+    function leaveRoom() { socket.emit('leaveRoom'); showLobby(); }
+    function leaveGame() {
+      socket.emit('leaveGame');
+      document.getElementById('game').style.display = 'none';
+      document.getElementById('lobbyInGame').style.display = 'block';
+    }
+  </script>
+</body>
+</html>

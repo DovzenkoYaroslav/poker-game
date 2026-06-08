@@ -1,0 +1,30 @@
+{
+  "афыфаы": {
+    "handsPlayed": 1,
+    "wins": 1,
+    "maxWin": 60,
+    "maxBet": 0,
+    "actions": 4
+  },
+  "d4mn": {
+    "handsPlayed": 7,
+    "wins": 6,
+    "maxWin": 280,
+    "maxBet": 120,
+    "actions": 28
+  },
+  "еве": {
+    "handsPlayed": 0,
+    "wins": 0,
+    "maxWin": 0,
+    "maxBet": 0,
+    "actions": 0
+  },
+  "афаф": {
+    "handsPlayed": 0,
+    "wins": 0,
+    "maxWin": 0,
+    "maxBet": 0,
+    "actions": 3
+  }
+}
