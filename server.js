@@ -79,7 +79,7 @@ function syncPlayerToGlobal(player) {
     maxWin: Math.max(existing.maxWin, s.maxWin || 0),
     maxBet: Math.max(existing.maxBet, s.maxBet || 0),
     actions: Math.max(existing.actions, s.actions || 0),
-    stack: Math.max(existing.stack, player.stack || 0)
+    stack: player.stack
   };
 }
 
@@ -713,6 +713,8 @@ io.on('connection', (socket) => {
     if (!room) return;
     if (room.startTimer) clearTimeout(room.startTimer);
     if (room.turnTimer) clearTimeout(room.turnTimer);
+    const player = room.players.find(p => p.id === socket.id);
+    if (player) { syncPlayerToGlobal(player); saveGlobalStats(); }
     room.players = room.players.filter(p => p.id !== socket.id);
     socketToRoom.delete(socket.id);
     if (room.players.length === 0) {
@@ -776,6 +778,7 @@ function findRoomBySocket(socket) {
 
 function startNewHand(room) {
   room.players.forEach(p => { p.cards = []; p.currentBet = 0; p.hasActed = false; p.handMaxBet = 0; p.totalBet = 0; });
+  room.players = room.players.filter(p => p.connected || p.stack > 0);
   const activePlayers = room.players.filter(p => p.connected && p.stack > 0);
   if (activePlayers.length < 2) {
     room.gameState = null;
