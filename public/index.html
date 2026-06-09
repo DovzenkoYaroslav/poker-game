@@ -477,6 +477,24 @@
       backdrop-filter: blur(4px);
     }
 
+    /* Dealer behind the table */
+    .bj-table-wrapper {
+      position: relative;
+      width: 100%;
+      padding-top: 80px;
+    }
+    .bj-table {
+      position: relative;
+      z-index: 2;
+    }
+    .bj-dealer-behind {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1;
+    }
+
     /* Мини-стол в лобби */
     .mini-table-wrapper {
       display: flex;
@@ -553,6 +571,36 @@
     .bj-player-spot .bj-label {
       color: #555 !important;
       font-size: 0.75rem;
+    }
+
+    .dealer-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .dealer-label {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--gold-light);
+      text-shadow: 0 0 20px rgba(240,185,11,0.3);
+      margin-bottom: 6px;
+      letter-spacing: 1px;
+    }
+    .dealer-avatar {
+      width: 100px;
+      height: 140px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      position: relative;
+      filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));
+    }
+    .dealer-avatar svg {
+      width: 100%;
+      height: 100%;
     }
 
     .raise-option {
@@ -957,26 +1005,59 @@
 
         <!-- BJ Game Table -->
         <div id="bjGame" style="display:none;">
-          <div class="bj-table" style="background:radial-gradient(ellipse at 50% 60%, #0d7a3e 0%, #0a5e2e 100%); border-radius:0 0 50% 50% / 0 0 40% 40%; padding:20px 25px; border:8px solid #3e2723; box-shadow:inset 0 0 40px rgba(0,0,0,0.6), 0 15px 30px rgba(0,0,0,0.5); text-align:center; min-height:350px;">
-
-            <!-- Dealer Area -->
-            <div id="bjDealerArea" style="margin-bottom:15px;">
-              <div style="display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:8px;">
-                <span style="color:var(--gold); font-weight:700; font-size:1.1rem;">🎩 Дилер</span>
-                <span id="bjDealerValue" style="background:rgba(0,0,0,0.5); padding:2px 12px; border-radius:12px; font-size:0.9rem; color:var(--white);"></span>
+          <div class="bj-table-wrapper">
+            <!-- Dealer behind the table -->
+            <div class="bj-dealer-behind">
+              <div class="dealer-wrapper">
+                <div class="dealer-label">🎩 Дилер</div>
+                <div class="dealer-avatar">
+                  <svg viewBox="0 0 60 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <ellipse cx="30" cy="82" rx="20" ry="5" fill="rgba(0,0,0,0.2)"/>
+                    <path d="M14 30 L12 72 Q12 82 22 82 L38 82 Q48 82 48 72 L46 30 Z" fill="#1a1a2e" stroke="#2d3436" stroke-width="0.5"/>
+                    <rect x="-2" y="34" width="18" height="8" rx="4" fill="#1a1a2e" stroke="#2d3436" stroke-width="0.5"/>
+                    <rect x="44" y="34" width="18" height="8" rx="4" fill="#1a1a2e" stroke="#2d3436" stroke-width="0.5"/>
+                    <circle cx="2" cy="44" r="5" fill="#f0c8a0"/>
+                    <circle cx="58" cy="44" r="5" fill="#f0c8a0"/>
+                    <polygon points="24,28 30,42 36,28" fill="white"/>
+                    <rect x="28" y="40" width="4" height="18" rx="2" fill="#e74c3c"/>
+                    <path d="M24 28 L20 42 L24 38 Z" fill="#2d3436"/>
+                    <path d="M36 28 L40 42 L36 38 Z" fill="#2d3436"/>
+                    <rect x="26" y="25" width="8" height="6" rx="2" fill="#f0c8a0"/>
+                    <ellipse cx="30" cy="15" rx="15" ry="17" fill="#f0c8a0"/>
+                    <path d="M15 10 Q15 0 30 0 Q45 0 45 10" fill="#2d3436"/>
+                    <ellipse cx="30" cy="2" rx="16" ry="6" fill="#2d3436"/>
+                    <rect x="14" y="3" width="32" height="7" rx="3" fill="#1a1a2e"/>
+                    <rect x="18" y="1" width="24" height="4" rx="2" fill="#fcd535"/>
+                    <ellipse cx="24" cy="14" rx="2.5" ry="2.5" fill="#333"/>
+                    <ellipse cx="36" cy="14" rx="2.5" ry="2.5" fill="#333"/>
+                    <circle cx="23" cy="13" r="1" fill="rgba(255,255,255,0.6)"/>
+                    <circle cx="35" cy="13" r="1" fill="rgba(255,255,255,0.6)"/>
+                    <path d="M21 10 Q24 8 27 10" fill="none" stroke="#333" stroke-width="1.2" stroke-linecap="round"/>
+                    <path d="M33 10 Q36 8 39 10" fill="none" stroke="#333" stroke-width="1.2" stroke-linecap="round"/>
+                    <path d="M30 17 Q30 22 27 23" fill="none" stroke="#d4a88a" stroke-width="1.2" stroke-linecap="round"/>
+                    <path d="M23 22 Q30 28 37 22" fill="none" stroke="#333" stroke-width="1.3" stroke-linecap="round"/>
+                    <circle cx="18" cy="19" r="4" fill="rgba(255,150,150,0.15)"/>
+                    <circle cx="42" cy="19" r="4" fill="rgba(255,150,150,0.15)"/>
+                  </svg>
+                </div>
               </div>
-              <div id="bjDealerCards" style="display:flex; justify-content:center; gap:6px; min-height:65px;"></div>
+            </div>
+            <div class="bj-table" style="background:radial-gradient(ellipse at 50% 60%, #0d7a3e 0%, #0a5e2e 100%); border-radius:0 0 50% 50% / 0 0 40% 40%; padding:14px 20px 20px; border:8px solid #3e2723; box-shadow:inset 0 0 40px rgba(0,0,0,0.6), 0 15px 30px rgba(0,0,0,0.5); text-align:center; min-height:260px;">
+
+            <!-- Dealer cards on table -->
+            <div id="bjDealerArea" style="margin-bottom:4px;">
+              <div id="bjDealerCards" style="display:flex; justify-content:center; gap:6px; min-height:60px;"></div>
+              <div style="margin-top:2px;">
+                <span id="bjDealerValue" style="background:rgba(0,0,0,0.5); padding:2px 12px; border-radius:12px; font-size:0.85rem; color:var(--white);"></span>
+              </div>
             </div>
 
-            <!-- Divider -->
-            <div style="border-top:1px solid rgba(255,255,255,0.15); margin:10px 0;"></div>
-
             <!-- Players Area -->
-            <div id="bjPlayersArea" style="display:flex; flex-wrap:wrap; justify-content:center; gap:10px; margin:12px 0;"></div>
+            <div id="bjPlayersArea" style="display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin:8px 0;"></div>
 
             <!-- Bet Area -->
-            <div id="bjBetArea" style="margin-top:12px;">
-              <p style="margin-bottom:8px; font-size:0.9rem;">Твой стек: <span id="bjStack" style="color:var(--gold-light); font-weight:700;">1000</span></p>
+            <div id="bjBetArea" style="margin-top:8px;">
+              <p style="margin-bottom:6px; font-size:0.9rem;">Твой стек: <span id="bjStack" style="color:var(--gold-light); font-weight:700;">1000</span></p>
               <div style="display:flex; justify-content:center; gap:6px; flex-wrap:wrap;">
                 <button onclick="bjPlaceBet(10)" class="btn-start" style="padding:6px 14px;">10</button>
                 <button onclick="bjPlaceBet(25)" class="btn-start" style="padding:6px 14px;">25</button>
@@ -987,16 +1068,17 @@
             </div>
 
             <!-- Actions -->
-            <div id="bjActions" style="margin-top:12px; display:none;">
+            <div id="bjActions" style="margin-top:8px; display:none;">
               <button onclick="bjDoAction('hit')" class="btn-call" style="min-width:90px;">Ещё</button>
               <button onclick="bjDoAction('stand')" class="btn-check" style="min-width:90px;">Хватит</button>
               <button onclick="bjDoAction('double')" class="btn-raise" style="min-width:90px;" id="bjDoubleBtn">Удвоить</button>
             </div>
 
             <!-- Message -->
-            <p id="bjMessage" style="margin-top:12px; font-weight:700; font-size:1rem; min-height:1.5em;"></p>
+            <p id="bjMessage" style="margin-top:10px; font-weight:700; font-size:1rem; min-height:1.5em;"></p>
             <button id="bjNewGameBtn" onclick="bjNewGame()" class="btn-start" style="display:none;">Новая игра</button>
             <button onclick="bjLeaveGame()" class="btn-leave" style="margin-top:8px;">Выйти</button>
+          </div>
           </div>
         </div>
 
@@ -1415,12 +1497,26 @@
       document.getElementById('bjGame').style.display = section === 'game' ? 'block' : 'none';
     }
 
+    function bjSoloSave() {
+      const name = document.getElementById('bjName').value.trim().toLowerCase();
+      if (name) localStorage.setItem('bjSolo_' + name, JSON.stringify({ stack: bjSoloState.stack, stats: bjSoloState.stats }));
+    }
+
+    function bjSoloLoad(name) {
+      try {
+        const raw = localStorage.getItem('bjSolo_' + name.toLowerCase().trim());
+        if (raw) return JSON.parse(raw);
+      } catch(e) {}
+      return null;
+    }
+
     function bjSolo() {
       const name = bjValidName();
       if (!name) return;
       bjSoloMode = true;
       bjRoomId = null;
-      bjSoloState = { deck: bjCreateDeck(), playerCards: [], dealerCards: [], stack: 1000, bet: 0 };
+      const saved = bjSoloLoad(name);
+      bjSoloState = { deck: bjCreateDeck(), playerCards: [], dealerCards: [], stack: saved?.stack ?? 1000, bet: 0, stats: saved?.stats ?? { bjHandsPlayed: 0, bjWins: 0, bjBlackjacks: 0, bjMaxWin: 0 } };
       showBJ('game');
       document.getElementById('bjBetArea').style.display = 'block';
       document.getElementById('bjActions').style.display = 'none';
@@ -1460,7 +1556,7 @@
     }
 
     function bjLeaveGame() {
-      if (bjSoloMode) { bjSoloMode = false; showBJ('lobby'); return; }
+      if (bjSoloMode) { bjSoloSave(); bjSoloMode = false; showBJ('lobby'); return; }
       socket.emit('leaveBJRoom');
       bjRoomId = null;
       bjSoloMode = false;
@@ -1483,7 +1579,6 @@
         if (pv.value === 21) bjSoloStand();
       } else {
         socket.emit('bjBet', amount);
-        document.getElementById('bjBetArea').style.display = 'none';
       }
     }
 
@@ -1576,6 +1671,7 @@
       else if (dv.bust || pv.value > dv.value) { bjSoloState.stack += bjSoloState.bet * 2; msg = 'Ты выиграл! +' + bjSoloState.bet; bjSoloState.stats.bjWins++; bjSoloState.stats.bjMaxWin = Math.max(bjSoloState.stats.bjMaxWin, bjSoloState.bet); }
       else if (pv.value === dv.value) { bjSoloState.stack += bjSoloState.bet; msg = 'Ничья'; }
       else { msg = 'Дилер победил'; }
+      bjSoloSave();
       renderBJSolo();
       document.getElementById('bjMessage').textContent = msg;
       document.getElementById('bjNewGameBtn').style.display = 'inline-block';
@@ -1583,6 +1679,7 @@
     }
 
     function bjEndSolo(msg) {
+      bjSoloSave();
       bjSoloState.stats.bjHandsPlayed++;
       renderBJSolo();
       document.getElementById('bjMessage').textContent = msg;
@@ -1654,18 +1751,19 @@
         document.getElementById('bjMessage').textContent = 'Сделай ставку';
         renderBJTable(data);
       } else if (data.state === 'playing' || data.state === 'dealer') {
+        showBJ('game');
         document.getElementById('bjBetArea').style.display = 'none';
         document.getElementById('bjActions').style.display = 'block';
         document.getElementById('bjNewGameBtn').style.display = 'none';
         const isMyTurn = data.currentPlayerId === socket.id;
         document.querySelectorAll('#bjActions button').forEach(b => b.disabled = !isMyTurn);
-        const canDouble = me && me.hands[0] && me.hands[0].length === 2 && me.stack >= me.bet;
+        const canDouble = me && me.hands && me.hands[0] && me.hands[0].length === 2 && me.stack >= me.bet;
         document.getElementById('bjDoubleBtn').style.display = isMyTurn && canDouble ? 'inline-block' : 'none';
         document.getElementById('bjMessage').textContent = isMyTurn ? 'Твой ход' : 'Ожидай...';
         renderBJTable(data);
       } else if (data.state === 'showdown') {
         document.getElementById('bjActions').style.display = 'none';
-        document.getElementById('bjNewGameBtn').style.display = 'inline-block';
+        document.getElementById('bjNewGameBtn').style.display = bjSoloMode ? 'inline-block' : 'none';
         const msgs = { win: 'Ты выиграл!', lose: 'Ты проиграл', push: 'Ничья', blackjack: 'Blackjack!', bust: 'Перебор!' };
         document.getElementById('bjMessage').textContent = me ? (msgs[me.result] || '') : '';
         renderBJTable(data);

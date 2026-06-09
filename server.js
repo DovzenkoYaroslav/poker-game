@@ -1034,7 +1034,12 @@ function bjCheckBust(room, player) {
   const hv = bjHandValue(player.hands[0]);
   if (hv.bust) { player.isDone = true; player.result = 'bust'; }
   if (player.isDone) bjNextPlayer(room);
-  else bjBroadcast(room.id);
+  else {
+    bjBroadcast(room.id);
+    if (room.turnTimer) clearTimeout(room.turnTimer);
+    room.turnDeadline = Date.now() + BJ_TURN_TIME;
+    room.turnTimer = setTimeout(() => bjAutoPlay(room, player), BJ_TURN_TIME);
+  }
 }
 
 function bjDealerTurn(room) {
@@ -1053,6 +1058,7 @@ function bjDealerTurn(room) {
       room.players.forEach(p => { p.bet = 0; p.hands = [[]]; p.currentHand = 0; p.isDone = false; p.result = null; });
       room.dealer = { cards: [], hidden: true };
       room.state = 'betting';
+      room.currentPlayerIndex = -1;
       room.deck = bjCreateShoe();
       bjBroadcast(room.id);
     }
@@ -1209,8 +1215,10 @@ io.on('connection', (socket) => {
     if (!room || room.state !== 'betting') return;
     const player = room.players.find(p => p.id === socket.id);
     if (!player || !player.connected) return;
-    const bet = Math.max(BJ_MIN_BET, Math.min(Math.floor(amount), player.stack));
-    if (bet <= 0) return;
+    const rawBet = Math.floor(amount);
+    const maxBet = player.stack;
+    const bet = Math.min(Math.max(BJ_MIN_BET, rawBet), maxBet);
+    if (bet <= 0 || bet > maxBet) return;
     player.stack -= bet;
     player.bet = bet;
     bjBroadcast(room.id);
@@ -1233,7 +1241,12 @@ io.on('connection', (socket) => {
       player.hands[0].push(room.deck.pop());
       const hv = bjHandValue(player.hands[0]);
       if (hv.bust || hv.value === 21) { player.isDone = true; player.result = hv.bust ? 'bust' : null; bjNextPlayer(room); }
-      else bjBroadcast(room.id);
+      else {
+        bjBroadcast(room.id);
+        if (room.turnTimer) clearTimeout(room.turnTimer);
+        room.turnDeadline = Date.now() + BJ_TURN_TIME;
+        room.turnTimer = setTimeout(() => bjAutoPlay(room, player), BJ_TURN_TIME);
+      }
     } else if (action === 'double') {
       if (player.hands[0].length !== 2 || player.stack < player.bet) return;
       player.stack -= player.bet;
@@ -1261,7 +1274,12 @@ io.on('connection', (socket) => {
         const next = room.players.find(p => p.connected);
         if (next) next.isAdmin = true;
       }
-      bjBroadcast(room.id);
+      if (room.state === 'playing' && room.currentPlayerIndex >= 0 && room.players[room.currentPlayerIndex]?.id === socket.id) {
+        if (room.turnTimer) clearTimeout(room.turnTimer);
+        bjNextPlayer(room);
+      } else {
+        bjBroadcast(room.id);
+      }
     }
   });
 
@@ -1271,7 +1289,13 @@ io.on('connection', (socket) => {
       const player = room.players.find(p => p.id === socket.id);
       if (player) { player.connected = false; syncBJPlayerToGlobal(player); }
       bjSocketToRoom.delete(socket.id);
-      bjBroadcast(room.id);
+      if (room.state === 'playing' && room.currentPlayerIndex >= 0 && room.players[room.currentPlayerIndex]?.id === socket.id) {
+        if (player) player.isDone = true;
+        if (room.turnTimer) clearTimeout(room.turnTimer);
+        bjNextPlayer(room);
+      } else {
+        bjBroadcast(room.id);
+      }
     }
   });
 });
